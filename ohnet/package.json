@@ -1,0 +1,50 @@
+{
+  "name": "@twisuki/ohnet",
+  "version": "0.1.0",
+  "description": "",
+  "author": "Twisuki",
+  "publishConfig": {
+    "access": "public"
+  },
+  "license": "MIT",
+  "readme": "README.md",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/Twisuki/ohnet"
+  },
+  "bugs": "https://github.com/Twisuki/ohnet/issues",
+  "keywords": [],
+  "sideEffects": false,
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.mjs",
+      "require": "./dist/index.js"
+    }
+  },
+  "main": "./dist/index.js",
+  "module": "./dist/index.mjs",
+  "types": "./dist/index.d.ts",
+  "files": [
+    "LICENSE",
+    "README.md",
+    "dist"
+  ],
+  "scripts": {
+    "check": "tsc --noEmit",
+    "build": "pnpm -w lint && pnpm check && pnpm test:run && tsup",
+    "test": "vitest",
+    "test:ui": "pnpm test --ui",
+    "test:run": "pnpm test run",
+    "publisher": "node ../scripts/publisher.mjs"
+  },
+  "devDependencies": {
+    "@types/node": "^26.1.1",
+    "@vitest/ui": "^4.1.9",
+    "cross-env": "^7.0.3",
+    "dayjs": "^1.11.21",
+    "tsup": "^8.5.1",
+    "typescript": "^6.0.0",
+    "vitest": "^4.1.9"
+  }
+}
