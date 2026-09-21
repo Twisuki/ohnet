@@ -1,7 +1,7 @@
 import type { BaseOhNetMiddleware, OhNetAdapter, OhNetConfig, OhNetContext } from "./types"
 import { BaseOhNetError } from "./error"
 import { pipeline } from "./pipeline"
-import { createDefaultContext, deepCopy } from "./utils"
+import { copyContext, createDefaultContext } from "./utils"
 
 export class OhNetBuilder {
   adapter: OhNetAdapter | null = null
@@ -16,10 +16,8 @@ export class OhNetBuilder {
   fork(config: OhNetConfig = {}): OhNetBuilder {
     const child = new OhNetBuilder({})
     child.adapter = this.adapter
-    child.context = {
-      ...deepCopy(this.context),
-      meta: {},
-    }
+    child.context = copyContext(this.context)
+    child.context.meta = {}
     child.middlewares = [...this.middlewares]
 
     child.applyConfig(config)
@@ -79,7 +77,7 @@ export class OhNetBuilder {
     if (method !== undefined)
       this.context.request.method = method
     if (headers !== undefined)
-      this.context.request.headers = { ...this.context.request.headers, ...headers }
+      this.context.request.headers = this.context.request.headers.concat(headers)
     if (body !== undefined)
       this.context.request.body = body
     if (signal !== undefined)

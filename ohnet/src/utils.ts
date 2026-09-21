@@ -1,29 +1,32 @@
-import type { OhNetContext } from "./types"
+import type { OhNetContext, OhNetRequest, OhNetResponse } from "./types"
 import { DEFAULT_OHNET_REQUEST } from "./config"
 
-export function deepCopy<T>(source: T): T {
-  if (source === null || typeof source !== "object") {
-    return source
+function copyRequest(request: OhNetRequest): OhNetRequest {
+  return {
+    ...request,
+    headers: request.headers.clone(),
   }
+}
 
-  if (Array.isArray(source)) {
-    const arr: unknown[] = []
-    for (const item of source) {
-      arr.push(deepCopy(item))
-    }
-    return arr as T
+function copyResponse(response: OhNetResponse): OhNetResponse {
+  return {
+    ...response,
+    headers: response.headers.clone(),
   }
+}
 
-  const obj: Record<string, unknown> = {}
-  for (const key of Object.keys(source as object)) {
-    obj[key] = deepCopy((source as Record<string, unknown>)[key])
+export function copyContext(context: OhNetContext): OhNetContext {
+  return {
+    request: copyRequest(context.request),
+    response: context.response ? copyResponse(context.response) : null,
+    error: context.error,
+    meta: { ...context.meta },
   }
-  return obj as T
 }
 
 export function createDefaultContext(): OhNetContext {
   return {
-    request: deepCopy(DEFAULT_OHNET_REQUEST),
+    request: copyRequest(DEFAULT_OHNET_REQUEST),
     response: null,
     error: null,
     meta: {},

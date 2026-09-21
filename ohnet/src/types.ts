@@ -1,8 +1,7 @@
 import type { BaseOhNetError } from "./error"
+import type { OhNetHeader, OhNetHeaderLike } from "./header"
 
 export type OhNetMethod = "GET" | "POST" | "PUT" | "DELETE" | "PATCH" | "HEAD" | "OPTIONS"
-
-export type OhNetHeader = Record<string, string>
 
 export interface OhNetSignal {
   aborted: boolean
@@ -34,7 +33,8 @@ export interface OhNetContext {
 
 export type OhNetAdapter = (context: OhNetContext) => Promise<OhNetResponse>
 
-export type OhNetConfig = Partial<OhNetRequest> & {
+export type OhNetConfig = Partial<Omit<OhNetRequest, "headers">> & {
+  headers?: OhNetHeaderLike
   adapter?: OhNetAdapter
 }
 

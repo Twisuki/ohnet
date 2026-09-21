@@ -1,7 +1,8 @@
 import type { OhNetRequest } from "./types"
+import { OhNetHeader } from "./header"
 
 export const DEFAULT_OHNET_REQUEST: OhNetRequest = {
   url: "",
   method: "GET",
-  headers: {},
+  headers: new OhNetHeader(),
 }

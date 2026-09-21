@@ -1,5 +1,6 @@
 import type { OhNetContext, OhNetResponse } from "./types"
 import { BaseOhNetError } from "./error"
+import { OhNetHeader } from "./header"
 
 export async function fetchAdapter(context: OhNetContext): Promise<OhNetResponse> {
   const { url, method, headers, body, signal, timeout } = context.request
@@ -22,7 +23,7 @@ export async function fetchAdapter(context: OhNetContext): Promise<OhNetResponse
   try {
     response = await fetch(url, {
       method,
-      headers,
+      headers: headers.toRecord(),
       body: body !== undefined ? JSON.stringify(body) : undefined,
       signal: controller.signal,
     })
@@ -42,10 +43,7 @@ export async function fetchAdapter(context: OhNetContext): Promise<OhNetResponse
     clearTimeout(timer)
   }
 
-  const responseHeaders: Record<string, string> = {}
-  response.headers.forEach((value, key) => {
-    responseHeaders[key] = value
-  })
+  const responseHeaders = OhNetHeader.from(response.headers)
 
   let data: unknown
   const contentType = response.headers.get("content-type") || ""
