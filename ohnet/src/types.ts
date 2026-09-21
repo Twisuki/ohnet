@@ -8,7 +8,10 @@ export type OhNetResponseType = "auto" | "json" | "text" | "arraybuffer" | "blob
 export type OhNetResponseKind = "basic" | "cors" | "default" | "error" | "opaque" | "opaqueredirect"
 
 export interface OhNetSignal {
-  aborted: boolean
+  readonly aborted: boolean
+  reason?: unknown
+  addEventListener?: (type: "abort", listener: () => void) => void
+  removeEventListener?: (type: "abort", listener: () => void) => void
   onAbort?: () => void
 }
 

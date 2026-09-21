@@ -2,6 +2,7 @@ import type { OhNetContext, OhNetResponse, OhNetResponseType } from "./types"
 import { BaseOhNetError } from "./error"
 import { createResponse } from "./factory"
 import { OhNetHeader } from "./header"
+import { subscribeAbort } from "./signal"
 
 async function parseData(response: Response, responseType: OhNetResponseType): Promise<unknown> {
   switch (responseType) {
@@ -30,17 +31,15 @@ export async function fetchAdapter(context: OhNetContext): Promise<OhNetResponse
   const { url, method, headers, body, signal, timeout, responseType } = context.request
 
   const controller = new AbortController()
+  const unsubscribe = subscribeAbort(signal, () => controller.abort())
 
-  if (signal?.aborted) {
-    controller.abort()
-  }
-  else if (signal) {
-    signal.onAbort = () => controller.abort()
-  }
-
+  let timedOut = false
   let timer: ReturnType<typeof setTimeout> | undefined
   if (timeout !== undefined) {
-    timer = setTimeout(() => controller.abort(), timeout)
+    timer = setTimeout(() => {
+      timedOut = true
+      controller.abort()
+    }, timeout)
   }
 
   let response: Response
@@ -53,18 +52,19 @@ export async function fetchAdapter(context: OhNetContext): Promise<OhNetResponse
     })
   }
   catch (error) {
-    if (timer !== undefined) {
-      clearTimeout(timer)
+    if (timedOut) {
+      throw new BaseOhNetError("TIMEOUT", -3, "timeout", undefined, error)
     }
-
     if (signal?.aborted) {
-      throw new BaseOhNetError("ABORT", -2, "aborted", undefined, error)
+      throw new BaseOhNetError("ABORT", -2, "aborted", signal.reason, error)
     }
     throw new BaseOhNetError("NETWORK", -1, "network error", undefined, error)
   }
-
-  if (timer !== undefined) {
-    clearTimeout(timer)
+  finally {
+    if (timer !== undefined) {
+      clearTimeout(timer)
+    }
+    unsubscribe()
   }
 
   const data = await parseData(response, responseType)

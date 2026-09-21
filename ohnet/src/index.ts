@@ -9,7 +9,7 @@ export type {
   OhNetHeaderLike,
   OhNetHeaderRecord,
 } from "./header"
-export { OhNetController } from "./signal"
+export { OhNetController, subscribeAbort } from "./signal"
 export { buildQueryString, DEFAULT_TRANSFORM_REQUEST } from "./transform"
 
 export { BaseOhNetMiddleware } from "./types"
