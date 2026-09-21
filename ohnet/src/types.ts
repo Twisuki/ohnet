@@ -3,25 +3,54 @@ import type { OhNetHeader, OhNetHeaderLike } from "./header"
 
 export type OhNetMethod = "GET" | "POST" | "PUT" | "DELETE" | "PATCH" | "HEAD" | "OPTIONS"
 
+export type OhNetResponseType = "auto" | "json" | "text" | "arraybuffer" | "blob" | "stream" | "raw"
+
+export type OhNetResponseKind = "basic" | "cors" | "default" | "error" | "opaque" | "opaqueredirect"
+
 export interface OhNetSignal {
   aborted: boolean
   onAbort?: () => void
 }
 
+export type OhNetParams
+  = | string
+    | Record<string, unknown>
+    | Iterable<readonly [string, string]>
+
 export interface OhNetRequest {
   url: string
   method: OhNetMethod
   headers: OhNetHeader
+  params?: OhNetParams
   body?: unknown
   signal?: OhNetSignal
   timeout?: number
+  responseType: OhNetResponseType
+  transformRequest?: OhNetTransformRequest[]
 }
 
-export interface OhNetResponse {
+export interface OhNetResponse<T = unknown> {
   status: number
-  text: string
+  statusText: string
+  ok: boolean
   headers: OhNetHeader
-  data: unknown
+  url: string
+  redirected: boolean
+  type: OhNetResponseKind
+  data: T
+  body?: unknown
+}
+
+export interface OhNetResponseInit<T = unknown> {
+  status?: number
+  statusText?: string
+  ok?: boolean
+  headers?: OhNetHeaderLike
+  url?: string
+  redirected?: boolean
+  type?: OhNetResponseKind
+  data?: T
+  body?: unknown
 }
 
 export interface OhNetContext {
@@ -33,8 +62,25 @@ export interface OhNetContext {
 
 export type OhNetAdapter = (context: OhNetContext) => Promise<OhNetResponse>
 
-export type OhNetConfig = Partial<Omit<OhNetRequest, "headers">> & {
+export type OhNetTransformRequest = (
+  data: unknown,
+  headers: OhNetHeader,
+  config: OhNetRequestConfig,
+) => unknown
+
+export interface OhNetRequestConfig {
+  url?: string
+  method?: OhNetMethod
   headers?: OhNetHeaderLike
+  params?: OhNetParams
+  data?: unknown
+  signal?: OhNetSignal
+  timeout?: number
+  responseType?: OhNetResponseType
+  transformRequest?: OhNetTransformRequest[]
+}
+
+export interface OhNetConfig extends OhNetRequestConfig {
   adapter?: OhNetAdapter
 }
 

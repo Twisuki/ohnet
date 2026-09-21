@@ -1,9 +1,33 @@
-import type { OhNetContext, OhNetResponse } from "./types"
+import type { OhNetContext, OhNetResponse, OhNetResponseType } from "./types"
 import { BaseOhNetError } from "./error"
+import { createResponse } from "./factory"
 import { OhNetHeader } from "./header"
 
+async function parseData(response: Response, responseType: OhNetResponseType): Promise<unknown> {
+  switch (responseType) {
+    case "text":
+      return response.text()
+    case "arraybuffer":
+      return response.arrayBuffer()
+    case "blob":
+      return response.blob()
+    case "stream":
+      return response.body
+    case "raw":
+      return response
+    case "json":
+      return response.json().catch(() => null)
+    default: {
+      const contentType = response.headers.get("content-type") || ""
+      return contentType.includes("application/json")
+        ? response.json().catch(() => null)
+        : response.text()
+    }
+  }
+}
+
 export async function fetchAdapter(context: OhNetContext): Promise<OhNetResponse> {
-  const { url, method, headers, body, signal, timeout } = context.request
+  const { url, method, headers, body, signal, timeout, responseType } = context.request
 
   const controller = new AbortController()
 
@@ -24,7 +48,7 @@ export async function fetchAdapter(context: OhNetContext): Promise<OhNetResponse
     response = await fetch(url, {
       method,
       headers: headers.toRecord(),
-      body: body !== undefined ? JSON.stringify(body) : undefined,
+      body: body as BodyInit | undefined,
       signal: controller.signal,
     })
   }
@@ -43,26 +67,15 @@ export async function fetchAdapter(context: OhNetContext): Promise<OhNetResponse
     clearTimeout(timer)
   }
 
-  const responseHeaders = OhNetHeader.from(response.headers)
+  const data = await parseData(response, responseType)
 
-  let data: unknown
-  const contentType = response.headers.get("content-type") || ""
-  if (contentType.includes("application/json")) {
-    try {
-      data = await response.json()
-    }
-    catch {
-      data = null
-    }
-  }
-  else {
-    data = await response.text()
-  }
-
-  return {
+  return createResponse({
     status: response.status,
-    text: response.statusText,
-    headers: responseHeaders,
+    statusText: response.statusText,
+    headers: OhNetHeader.from(response.headers),
+    url: response.url,
+    redirected: response.redirected,
+    type: response.type,
     data,
-  }
+  })
 }

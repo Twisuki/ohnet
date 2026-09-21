@@ -1,6 +1,8 @@
 import type { BaseOhNetMiddleware, OhNetAdapter, OhNetConfig, OhNetContext } from "./types"
 import { BaseOhNetError } from "./error"
+import { resolveRequest } from "./factory"
 import { pipeline } from "./pipeline"
+import { appendQuery, buildQueryString } from "./transform"
 import { copyContext, createDefaultContext } from "./utils"
 
 export class OhNetBuilder {
@@ -43,53 +45,47 @@ export class OhNetBuilder {
   }
 
   get<T>(path?: string, data?: unknown): Promise<T> {
-    return this.append(path ?? "").request<T>({ method: "GET", body: data })
+    return this.append(path ?? "").request<T>({ method: "GET", data })
   }
 
   post<T>(path?: string, data?: unknown): Promise<T> {
-    return this.append(path ?? "").request<T>({ method: "POST", body: data })
+    return this.append(path ?? "").request<T>({ method: "POST", data })
   }
 
   put<T>(path?: string, data?: unknown): Promise<T> {
-    return this.append(path ?? "").request<T>({ method: "PUT", body: data })
+    return this.append(path ?? "").request<T>({ method: "PUT", data })
   }
 
   delete<T>(path?: string, data?: unknown): Promise<T> {
-    return this.append(path ?? "").request<T>({ method: "DELETE", body: data })
+    return this.append(path ?? "").request<T>({ method: "DELETE", data })
   }
 
   patch<T>(path?: string, data?: unknown): Promise<T> {
-    return this.append(path ?? "").request<T>({ method: "PATCH", body: data })
+    return this.append(path ?? "").request<T>({ method: "PATCH", data })
   }
 
   head<T>(path?: string, data?: unknown): Promise<T> {
-    return this.append(path ?? "").request<T>({ method: "HEAD", body: data })
+    return this.append(path ?? "").request<T>({ method: "HEAD", data })
   }
 
   options<T>(path?: string, data?: unknown): Promise<T> {
-    return this.append(path ?? "").request<T>({ method: "OPTIONS", body: data })
+    return this.append(path ?? "").request<T>({ method: "OPTIONS", data })
   }
 
   private applyConfig(config: OhNetConfig): void {
-    const { url, method, headers, body, signal, timeout } = config
-    if (url !== undefined)
-      this.context.request.url = url
-    if (method !== undefined)
-      this.context.request.method = method
-    if (headers !== undefined)
-      this.context.request.headers = this.context.request.headers.concat(headers)
-    if (body !== undefined)
-      this.context.request.body = body
-    if (signal !== undefined)
-      this.context.request.signal = signal
-    if (timeout !== undefined)
-      this.context.request.timeout = timeout
+    this.context.request = resolveRequest(this.context.request, config)
   }
 
   private async run<T>(): Promise<T> {
     if (!this.adapter) {
       throw new Error("No adapter configured")
     }
+
+    const { params } = this.context.request
+    if (params !== undefined) {
+      this.context.request.url = appendQuery(this.context.request.url, buildQueryString(params))
+    }
+
     const ctx = await pipeline(this.context, this.middlewares, this.adapter)
     if (ctx.error) {
       throw ctx.error
