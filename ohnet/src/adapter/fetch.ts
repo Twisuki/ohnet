@@ -1,8 +1,9 @@
-import type { OhNetContext, OhNetResponse, OhNetResponseType } from "./types"
-import { BaseOhNetError } from "./error"
-import { createResponse } from "./factory"
-import { OhNetHeader } from "./header"
-import { subscribeAbort } from "./signal"
+import type { OhNetContext, OhNetResponse } from "../context/types"
+import type { OhNetResponseType } from "../core/types"
+import { createResponse } from "../context/response"
+import { BaseOhNetError } from "../model/error"
+import { OhNetHeader } from "../model/header"
+import { subscribeAbort } from "../model/signal"
 
 async function parseData(response: Response, responseType: OhNetResponseType): Promise<unknown> {
   switch (responseType) {

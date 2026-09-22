@@ -1,9 +1,9 @@
-import type { BaseOhNetMiddleware, OhNetAdapter, OhNetConfig, OhNetContext } from "./types"
-import { BaseOhNetError } from "./error"
-import { resolveRequest } from "./factory"
-import { pipeline } from "./pipeline"
-import { appendQuery, buildQueryString } from "./transform"
-import { copyContext, createDefaultContext } from "./utils"
+import type { OhNetAdapter, OhNetConfig, OhNetContext } from "./context/types"
+import type { BaseOhNetMiddleware } from "./pipeline/middleware"
+import { resolveRequest } from "./context/request"
+import { appendQuery, buildQueryString, copyContext, createDefaultContext } from "./context/utils"
+import { BaseOhNetError } from "./model/error"
+import { pipeline } from "./pipeline/scheduler"
 
 export class OhNetBuilder {
   adapter: OhNetAdapter | null = null

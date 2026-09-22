@@ -1,24 +1,7 @@
-import type { BaseOhNetError } from "./error"
-import type { OhNetHeader, OhNetHeaderLike } from "./header"
-
-export type OhNetMethod = "GET" | "POST" | "PUT" | "DELETE" | "PATCH" | "HEAD" | "OPTIONS"
-
-export type OhNetResponseType = "auto" | "json" | "text" | "arraybuffer" | "blob" | "stream" | "raw"
-
-export type OhNetResponseKind = "basic" | "cors" | "default" | "error" | "opaque" | "opaqueredirect"
-
-export interface OhNetSignal {
-  readonly aborted: boolean
-  reason?: unknown
-  addEventListener?: (type: "abort", listener: () => void) => void
-  removeEventListener?: (type: "abort", listener: () => void) => void
-  onAbort?: () => void
-}
-
-export type OhNetParams
-  = | string
-    | Record<string, unknown>
-    | Iterable<readonly [string, string]>
+import type { OhNetMethod, OhNetParams, OhNetResponseKind, OhNetResponseType } from "../core/types"
+import type { BaseOhNetError } from "../model/error"
+import type { OhNetHeader, OhNetHeaderLike } from "../model/header"
+import type { OhNetSignal } from "../model/signal"
 
 export interface OhNetRequest {
   url: string
@@ -85,12 +68,4 @@ export interface OhNetRequestConfig {
 
 export interface OhNetConfig extends OhNetRequestConfig {
   adapter?: OhNetAdapter
-}
-
-export type OhNetMiddlewareNext = (context: OhNetContext) => Promise<OhNetContext>
-
-export abstract class BaseOhNetMiddleware {
-  async onStart?(adapter: OhNetAdapter, context: OhNetContext, next: OhNetMiddlewareNext): Promise<OhNetContext>
-  async onSuccess?(adapter: OhNetAdapter, context: OhNetContext, next: OhNetMiddlewareNext): Promise<OhNetContext>
-  async onError?(adapter: OhNetAdapter, context: OhNetContext, next: OhNetMiddlewareNext): Promise<OhNetContext>
 }

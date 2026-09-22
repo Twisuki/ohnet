@@ -1,5 +1,6 @@
-import type { BaseOhNetMiddleware, OhNetAdapter, OhNetContext } from "./types"
-import { BaseOhNetError } from "./error"
+import type { OhNetAdapter, OhNetContext } from "../context/types"
+import type { BaseOhNetMiddleware } from "./middleware"
+import { BaseOhNetError } from "../model/error"
 
 async function runRequestPipeline(
   context: OhNetContext,

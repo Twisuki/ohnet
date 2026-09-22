@@ -1,5 +1,7 @@
-import type { OhNetHeader } from "./header"
-import type { OhNetParams, OhNetTransformRequest } from "./types"
+import type { OhNetParams } from "../core/types"
+import type { OhNetHeader } from "../model/header"
+import type { OhNetContext, OhNetRequest, OhNetResponse, OhNetTransformRequest } from "./types"
+import { DEFAULT_OHNET_REQUEST } from "../core/config"
 
 function isIterable(value: unknown): value is Iterable<unknown> {
   return typeof value === "object" && value !== null
@@ -54,3 +56,35 @@ export const DEFAULT_TRANSFORM_REQUEST: OhNetTransformRequest[] = [
     return JSON.stringify(data)
   },
 ]
+
+function copyRequest(request: OhNetRequest): OhNetRequest {
+  return {
+    ...request,
+    headers: request.headers.clone(),
+  }
+}
+
+function copyResponse(response: OhNetResponse): OhNetResponse {
+  return {
+    ...response,
+    headers: response.headers.clone(),
+  }
+}
+
+export function copyContext(context: OhNetContext): OhNetContext {
+  return {
+    request: copyRequest(context.request),
+    response: context.response ? copyResponse(context.response) : null,
+    error: context.error,
+    meta: { ...context.meta },
+  }
+}
+
+export function createDefaultContext(): OhNetContext {
+  return {
+    request: copyRequest(DEFAULT_OHNET_REQUEST),
+    response: null,
+    error: null,
+    meta: {},
+  }
+}

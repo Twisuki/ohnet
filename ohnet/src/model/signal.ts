@@ -1,4 +1,10 @@
-import type { OhNetSignal } from "./types"
+export interface OhNetSignal {
+  readonly aborted: boolean
+  reason?: unknown
+  addEventListener?: (type: "abort", listener: () => void) => void
+  removeEventListener?: (type: "abort", listener: () => void) => void
+  onAbort?: () => void
+}
 
 export class OhNetController implements OhNetSignal {
   #aborted = false
