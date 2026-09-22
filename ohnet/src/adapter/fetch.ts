@@ -1,8 +1,8 @@
-import type { OhNetContext, OhNetResponse, OhNetResponseType } from "../types"
-import { OHNET_ERROR_CODE, OHNET_ERROR_MESSAGE, OhNetInternalError } from "../config/error"
-import { createResponse } from "../context/response"
-import { OhNetHeader } from "../model/header"
-import { subscribeAbort } from "../model/signal"
+import type { OhNetContext, OhNetResponse, OhNetResponseType } from "@/types"
+import { OHNET_ERROR_CODE, OHNET_ERROR_MESSAGE, OhNetInternalError } from "@/config/error"
+import { createResponse } from "@/context/response"
+import { OhNetHeader } from "@/model/header"
+import { subscribeAbort } from "@/model/signal"
 
 function isJsonData(data: unknown): boolean {
   if (typeof data !== "object" || data === null)

@@ -1,5 +1,5 @@
-import type { OhNetAdapter } from "../adapter/types"
-import type { OhNetContext } from "../types"
+import type { OhNetAdapter } from "@/adapter/types"
+import type { OhNetContext } from "@/types"
 
 export interface OhNetMiddlewareEnterControls {
   skip: () => void

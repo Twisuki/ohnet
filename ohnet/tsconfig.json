@@ -5,6 +5,7 @@
     "module": "ESNext",
     "moduleResolution": "bundler",
     "paths": {
+      "@/*": ["./src/*"],
       "@twisuki/ohnet": ["./src/index.ts"]
     },
     "resolveJsonModule": true,

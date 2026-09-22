@@ -1,5 +1,5 @@
-import type { OhNetRequest } from "../types"
-import { OhNetHeader } from "../model/header"
+import type { OhNetRequest } from "@/types"
+import { OhNetHeader } from "@/model/header"
 
 export const DEFAULT_OHNET_REQUEST: OhNetRequest = {
   url: "",

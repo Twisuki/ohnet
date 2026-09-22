@@ -1,6 +1,6 @@
-import type { OhNetResponse } from "../types"
-import type { OhNetResponseLike } from "./types"
-import { OhNetHeader } from "../model/header"
+import type { OhNetResponseLike } from "@/context/types"
+import type { OhNetResponse } from "@/types"
+import { OhNetHeader } from "@/model/header"
 
 export function createResponse<T>(input: OhNetResponseLike<T>): OhNetResponse<T> {
   const status = input.status

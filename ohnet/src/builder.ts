@@ -1,11 +1,11 @@
-import type { OhNetAdapter } from "./adapter/types"
-import type { OhNetConfig } from "./context/types"
-import type { OhNetMiddleware } from "./middleware/types"
-import type { OhNetContext, OhNetParams } from "./types"
-import { OHNET_ERROR_CODE, OHNET_ERROR_MESSAGE, OhNetInternalError } from "./config/error"
-import { resolveRequest } from "./context/request"
-import { appendQuery, buildQueryString, copyContext, createDefaultContext } from "./context/utils"
-import { compose } from "./middleware/dispatcher"
+import type { OhNetAdapter } from "@/adapter/types"
+import type { OhNetConfig } from "@/context/types"
+import type { OhNetMiddleware } from "@/middleware/types"
+import type { OhNetContext, OhNetParams } from "@/types"
+import { OHNET_ERROR_CODE, OHNET_ERROR_MESSAGE, OhNetInternalError } from "@/config/error"
+import { resolveRequest } from "@/context/request"
+import { appendQuery, buildQueryString, copyContext, createDefaultContext } from "@/context/utils"
+import { compose } from "@/middleware/dispatcher"
 
 export class OhNetBuilder {
   adapter: OhNetAdapter | null = null

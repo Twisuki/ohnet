@@ -7,6 +7,7 @@ export default defineConfig({
     globals: true,
     include: ["test/**/*.test.ts"],
     alias: {
+      "@": fileURLToPath(new URL("./src", import.meta.url)),
       "@twisuki/ohnet": fileURLToPath(new URL("./src/index.ts", import.meta.url)),
     },
   },

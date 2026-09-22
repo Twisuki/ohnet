@@ -1,7 +1,7 @@
-import type { OhNetAdapter } from "../adapter/types"
-import type { OhNetHeaderLike } from "../model/header"
-import type { OhNetSignal } from "../model/signal"
-import type { OhNetMethod, OhNetParams, OhNetResponseKind, OhNetResponseType } from "../types"
+import type { OhNetAdapter } from "@/adapter/types"
+import type { OhNetHeaderLike } from "@/model/header"
+import type { OhNetSignal } from "@/model/signal"
+import type { OhNetMethod, OhNetParams, OhNetResponseKind, OhNetResponseType } from "@/types"
 
 export interface OhNetRequestConfig {
   url?: string

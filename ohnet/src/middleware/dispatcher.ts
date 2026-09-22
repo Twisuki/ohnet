@@ -1,12 +1,12 @@
-import type { OhNetAdapter } from "../adapter/types"
-import type { OhNetContext } from "../types"
+import type { OhNetAdapter } from "@/adapter/types"
 import type {
   OhNetMiddleware,
   OhNetMiddlewareEnterControls,
   OhNetMiddlewareLeaveControls,
-} from "./types"
-import { OhNetUnknownError } from "../config/error"
-import { OhNetError } from "../model/error"
+} from "@/middleware/types"
+import type { OhNetContext } from "@/types"
+import { OhNetUnknownError } from "@/config/error"
+import { OhNetError } from "@/model/error"
 
 export async function run(context: OhNetContext, func: () => Promise<unknown>): Promise<void> {
   try {

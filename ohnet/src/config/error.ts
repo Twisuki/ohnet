@@ -1,4 +1,4 @@
-import { OhNetError } from "../model/error"
+import { OhNetError } from "@/model/error"
 
 export const OHNET_ERROR_TYPE = "OHNET_INTERNAL"
 

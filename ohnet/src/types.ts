@@ -1,6 +1,6 @@
-import type { OhNetError } from "./model/error"
-import type { OhNetHeader } from "./model/header"
-import type { OhNetSignal } from "./model/signal"
+import type { OhNetError } from "@/model/error"
+import type { OhNetHeader } from "@/model/header"
+import type { OhNetSignal } from "@/model/signal"
 
 export type OhNetMethod = "GET" | "POST" | "PUT" | "DELETE" | "PATCH" | "HEAD" | "OPTIONS"
 

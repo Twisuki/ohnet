@@ -1,5 +1,5 @@
-import type { OhNetRequest } from "../types"
-import type { OhNetRequestConfig } from "./types"
+import type { OhNetRequestConfig } from "@/context/types"
+import type { OhNetRequest } from "@/types"
 
 export function resolveRequest(base: OhNetRequest, config: OhNetRequestConfig): OhNetRequest {
   const request: OhNetRequest = { ...base, headers: base.headers.clone() }
