@@ -31,7 +31,9 @@
     "dist"
   ],
   "scripts": {
-    "check": "tsc --noEmit",
+    "check": "pnpm check:src && pnpm check:test",
+    "check:src": "tsc --noEmit",
+    "check:test": "tsc -p tsconfig.test.json",
     "build": "pnpm -w lint && pnpm check && pnpm test:run && tsup",
     "test": "vitest",
     "test:ui": "pnpm test --ui",

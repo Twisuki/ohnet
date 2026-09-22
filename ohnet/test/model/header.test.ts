@@ -156,7 +156,7 @@ describe("model OhNetHeader", () => {
     it("forEach binds thisArg", () => {
       const h = new OhNetHeader({ x: "1" })
       const ctx = { count: 0 }
-      h.forEach(function () {
+      h.forEach(function (this: { count: number }) {
         this.count++
       }, ctx)
       expect(ctx.count).toBe(1)
