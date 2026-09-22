@@ -1,17 +1,19 @@
-import type { OhNetResponse, OhNetResponseInit } from "./types"
+import type { OhNetResponse } from "../core/types"
+import type { OhNetResponseLike } from "./types"
 import { OhNetHeader } from "../model/header"
 
-export function createResponse<T = unknown>(init: OhNetResponseInit<T> = {}): OhNetResponse<T> {
-  const status = init.status ?? 0
-  return {
+export function createResponse<T>(input: OhNetResponseLike<T>): OhNetResponse<T> {
+  const status = input.status
+  const result: OhNetResponse<T> = {
     status,
-    statusText: init.statusText ?? "",
-    ok: init.ok ?? (status >= 200 && status < 300),
-    headers: OhNetHeader.from(init.headers),
-    url: init.url ?? "",
-    redirected: init.redirected ?? false,
-    type: init.type ?? "default",
-    data: init.data as T,
-    body: init.body,
+    statusText: input.statusText ?? "",
+    ok: input.ok ?? (status >= 200 && status < 300),
+    headers: OhNetHeader.from(input.headers),
+    url: input.url,
+    redirected: input.redirected ?? false,
+    type: input.type ?? "default",
+    data: input.data as T,
+    body: input.body,
   }
+  return result
 }

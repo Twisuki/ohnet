@@ -1,9 +1,26 @@
-import type { OhNetContext, OhNetResponse } from "../context/types"
-import type { OhNetResponseType } from "../core/types"
+import type { OhNetContext, OhNetResponse, OhNetResponseType } from "../core/types"
 import { createResponse } from "../context/response"
 import { BaseOhNetError } from "../model/error"
 import { OhNetHeader } from "../model/header"
 import { subscribeAbort } from "../model/signal"
+
+function isJsonData(data: unknown): boolean {
+  if (typeof data !== "object" || data === null)
+    return false
+  const tag = Object.prototype.toString.call(data)
+  return tag === "[object Object]" || tag === "[object Array]"
+}
+
+async function serializeBody(
+  data: unknown,
+  headers: OhNetHeader,
+): Promise<unknown> {
+  if (!isJsonData(data))
+    return data
+  if (!headers.has("content-type"))
+    headers.set("content-type", "application/json")
+  return JSON.stringify(data)
+}
 
 async function parseData(response: Response, responseType: OhNetResponseType): Promise<unknown> {
   switch (responseType) {
@@ -29,7 +46,7 @@ async function parseData(response: Response, responseType: OhNetResponseType): P
 }
 
 export async function fetchAdapter(context: OhNetContext): Promise<OhNetResponse> {
-  const { url, method, headers, body, signal, timeout, responseType } = context.request
+  const { url, method, headers, data, signal, timeout, responseType } = context.request
 
   const controller = new AbortController()
   const unsubscribe = subscribeAbort(signal, () => controller.abort())
@@ -43,11 +60,14 @@ export async function fetchAdapter(context: OhNetContext): Promise<OhNetResponse
     }, timeout)
   }
 
+  const outgoingHeaders = headers.clone()
+  const body = await serializeBody(data, outgoingHeaders)
+
   let response: Response
   try {
     response = await fetch(url, {
       method,
-      headers: headers.toRecord(),
+      headers: outgoingHeaders.toRecord(),
       body: body as BodyInit | undefined,
       signal: controller.signal,
     })
@@ -68,7 +88,7 @@ export async function fetchAdapter(context: OhNetContext): Promise<OhNetResponse
     unsubscribe()
   }
 
-  const data = await parseData(response, responseType)
+  const parsedData = await parseData(response, responseType)
 
   return createResponse({
     status: response.status,
@@ -77,6 +97,6 @@ export async function fetchAdapter(context: OhNetContext): Promise<OhNetResponse
     url: response.url,
     redirected: response.redirected,
     type: response.type,
-    data,
+    data: parsedData,
   })
 }

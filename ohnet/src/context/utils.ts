@@ -1,6 +1,4 @@
-import type { OhNetParams } from "../core/types"
-import type { OhNetHeader } from "../model/header"
-import type { OhNetContext, OhNetRequest, OhNetResponse, OhNetTransformRequest } from "./types"
+import type { OhNetContext, OhNetParams, OhNetRequest, OhNetResponse } from "../core/types"
 import { DEFAULT_OHNET_REQUEST } from "../core/config"
 
 function isIterable(value: unknown): value is Iterable<unknown> {
@@ -39,23 +37,6 @@ export function appendQuery(url: string, query: string): string {
     return url
   return `${url}${url.includes("?") ? "&" : "?"}${query}`
 }
-
-function isJsonData(data: unknown): boolean {
-  if (typeof data !== "object" || data === null)
-    return false
-  const tag = Object.prototype.toString.call(data)
-  return tag === "[object Object]" || tag === "[object Array]"
-}
-
-export const DEFAULT_TRANSFORM_REQUEST: OhNetTransformRequest[] = [
-  (data: unknown, headers: OhNetHeader) => {
-    if (!isJsonData(data))
-      return data
-    if (!headers.has("content-type"))
-      headers.set("content-type", "application/json")
-    return JSON.stringify(data)
-  },
-]
 
 function copyRequest(request: OhNetRequest): OhNetRequest {
   return {

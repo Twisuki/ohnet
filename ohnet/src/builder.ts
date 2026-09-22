@@ -1,4 +1,6 @@
-import type { OhNetAdapter, OhNetConfig, OhNetContext } from "./context/types"
+import type { OhNetAdapter } from "./adapter/types"
+import type { OhNetConfig } from "./context/types"
+import type { OhNetContext, OhNetParams } from "./core/types"
 import type { BaseOhNetMiddleware } from "./pipeline/middleware"
 import { resolveRequest } from "./context/request"
 import { appendQuery, buildQueryString, copyContext, createDefaultContext } from "./context/utils"
@@ -44,8 +46,8 @@ export class OhNetBuilder {
     return this.fork(config).run<T>()
   }
 
-  get<T>(path?: string, data?: unknown): Promise<T> {
-    return this.append(path ?? "").request<T>({ method: "GET", data })
+  get<T>(path?: string, params?: OhNetParams, data?: unknown): Promise<T> {
+    return this.append(path ?? "").request<T>({ method: "GET", params, data })
   }
 
   post<T>(path?: string, data?: unknown): Promise<T> {

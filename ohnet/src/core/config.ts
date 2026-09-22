@@ -1,4 +1,4 @@
-import type { OhNetRequest } from "../context/types"
+import type { OhNetRequest } from "./types"
 import { OhNetHeader } from "../model/header"
 
 export const DEFAULT_OHNET_REQUEST: OhNetRequest = {

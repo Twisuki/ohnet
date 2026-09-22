@@ -1,4 +1,5 @@
-import type { OhNetAdapter, OhNetContext } from "../context/types"
+import type { OhNetAdapter } from "../adapter/types"
+import type { OhNetContext } from "../core/types"
 import type { BaseOhNetMiddleware } from "./middleware"
 import { BaseOhNetError } from "../model/error"
 

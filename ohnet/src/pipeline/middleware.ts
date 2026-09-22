@@ -1,4 +1,5 @@
-import type { OhNetAdapter, OhNetContext } from "../context/types"
+import type { OhNetAdapter } from "../adapter/types"
+import type { OhNetContext } from "../core/types"
 
 export type OhNetMiddlewareNext = (context: OhNetContext) => Promise<OhNetContext>
 
