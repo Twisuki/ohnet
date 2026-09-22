@@ -12,10 +12,11 @@ export type {
   OhNetResponseKind,
   OhNetResponseType,
 } from "./core/types"
+export { OhNetMiddleware } from "./middleware/types"
+
 export { BaseOhNetError } from "./model/error"
 
 export { OhNetHeader } from "./model/header"
-
 export type {
   OhNetHeaderEntries,
   OhNetHeaderEntry,
@@ -25,5 +26,3 @@ export type {
 } from "./model/header"
 export { OhNetController, subscribeAbort } from "./model/signal"
 export type { OhNetSignal } from "./model/signal"
-export { BaseOhNetMiddleware } from "./pipeline/middleware"
-export type { OhNetMiddlewareNext } from "./pipeline/middleware"

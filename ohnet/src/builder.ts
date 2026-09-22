@@ -1,16 +1,16 @@
 import type { OhNetAdapter } from "./adapter/types"
 import type { OhNetConfig } from "./context/types"
 import type { OhNetContext, OhNetParams } from "./core/types"
-import type { BaseOhNetMiddleware } from "./pipeline/middleware"
+import type { OhNetMiddleware } from "./middleware/types"
 import { resolveRequest } from "./context/request"
 import { appendQuery, buildQueryString, copyContext, createDefaultContext } from "./context/utils"
+import { compose } from "./middleware/dispatcher"
 import { BaseOhNetError } from "./model/error"
-import { pipeline } from "./pipeline/scheduler"
 
 export class OhNetBuilder {
   adapter: OhNetAdapter | null = null
   context: OhNetContext = createDefaultContext()
-  middlewares: BaseOhNetMiddleware[] = []
+  middlewares: OhNetMiddleware[] = []
 
   constructor(config: OhNetConfig) {
     this.adapter = config.adapter ?? null
@@ -32,7 +32,7 @@ export class OhNetBuilder {
     return this.fork(config)
   }
 
-  with(middleware: BaseOhNetMiddleware): OhNetBuilder {
+  with(middleware: OhNetMiddleware): OhNetBuilder {
     const child = this.fork()
     child.middlewares = [...child.middlewares, middleware]
     return child
@@ -88,13 +88,13 @@ export class OhNetBuilder {
       this.context.request.url = appendQuery(this.context.request.url, buildQueryString(params))
     }
 
-    const ctx = await pipeline(this.context, this.middlewares, this.adapter)
-    if (ctx.error) {
-      throw ctx.error
+    await compose(this.adapter, this.context, this.middlewares)
+    if (this.context.error) {
+      throw this.context.error
     }
-    if (!ctx.response) {
+    if (!this.context.response) {
       throw new BaseOhNetError("INTERNAL", 0, "internal error")
     }
-    return ctx.response.data as T
+    return this.context.response.data as T
   }
 }
