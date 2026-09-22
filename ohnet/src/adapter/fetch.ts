@@ -1,6 +1,6 @@
-import type { OhNetContext, OhNetResponse, OhNetResponseType } from "../core/types"
+import type { OhNetContext, OhNetResponse, OhNetResponseType } from "../types"
+import { OHNET_ERROR_CODE, OHNET_ERROR_MESSAGE, OhNetInternalError } from "../config/error"
 import { createResponse } from "../context/response"
-import { BaseOhNetError } from "../model/error"
 import { OhNetHeader } from "../model/header"
 import { subscribeAbort } from "../model/signal"
 
@@ -74,12 +74,12 @@ export async function fetchAdapter(context: OhNetContext): Promise<OhNetResponse
   }
   catch (error) {
     if (timedOut) {
-      throw new BaseOhNetError("TIMEOUT", -3, "timeout", undefined, error)
+      throw new OhNetInternalError(OHNET_ERROR_CODE.TIMEOUT, OHNET_ERROR_MESSAGE.TIMEOUT, undefined, error)
     }
     if (signal?.aborted) {
-      throw new BaseOhNetError("ABORT", -2, "aborted", signal.reason, error)
+      throw new OhNetInternalError(OHNET_ERROR_CODE.ABORT, OHNET_ERROR_MESSAGE.ABORT, signal.reason, error)
     }
-    throw new BaseOhNetError("NETWORK", -1, "network error", undefined, error)
+    throw new OhNetInternalError(OHNET_ERROR_CODE.NETWORK, OHNET_ERROR_MESSAGE.NETWORK, undefined, error)
   }
   finally {
     if (timer !== undefined) {

@@ -1,15 +1,15 @@
-export class BaseOhNetError extends Error {
+export class OhNetError extends Error {
   type: string
-  code: string | number
-  msg: string
+  code: string
+  message: string
   data?: unknown
   error?: unknown
 
-  constructor(type: string, code: string | number, msg: string, data?: unknown, error?: unknown) {
-    super(`[${code}] ${msg}`)
+  constructor(type: string, code: string, message: string, data?: unknown, error?: unknown) {
+    super(`[${code}] ${message}`)
     this.type = type
     this.code = code
-    this.msg = msg
+    this.message = message
     this.data = data
     this.error = error
   }

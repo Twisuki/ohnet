@@ -1,11 +1,11 @@
 import type { OhNetAdapter } from "./adapter/types"
 import type { OhNetConfig } from "./context/types"
-import type { OhNetContext, OhNetParams } from "./core/types"
 import type { OhNetMiddleware } from "./middleware/types"
+import type { OhNetContext, OhNetParams } from "./types"
+import { OHNET_ERROR_CODE, OHNET_ERROR_MESSAGE, OhNetInternalError } from "./config/error"
 import { resolveRequest } from "./context/request"
 import { appendQuery, buildQueryString, copyContext, createDefaultContext } from "./context/utils"
 import { compose } from "./middleware/dispatcher"
-import { BaseOhNetError } from "./model/error"
 
 export class OhNetBuilder {
   adapter: OhNetAdapter | null = null
@@ -80,7 +80,7 @@ export class OhNetBuilder {
 
   private async run<T>(): Promise<T> {
     if (!this.adapter) {
-      throw new Error("No adapter configured")
+      throw new OhNetInternalError(OHNET_ERROR_CODE.NO_ADAPTER, OHNET_ERROR_MESSAGE.NO_ADAPTER)
     }
 
     const { params } = this.context.request
@@ -93,7 +93,7 @@ export class OhNetBuilder {
       throw this.context.error
     }
     if (!this.context.response) {
-      throw new BaseOhNetError("INTERNAL", 0, "internal error")
+      throw new OhNetInternalError(OHNET_ERROR_CODE.NO_RESPONSE, OHNET_ERROR_MESSAGE.NO_RESPONSE)
     }
     return this.context.response.data as T
   }

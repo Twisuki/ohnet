@@ -1,5 +1,5 @@
-import type { OhNetContext, OhNetParams, OhNetRequest, OhNetResponse } from "../core/types"
-import { DEFAULT_OHNET_REQUEST } from "../core/config"
+import type { OhNetContext, OhNetParams, OhNetRequest, OhNetResponse } from "../types"
+import { DEFAULT_OHNET_REQUEST } from "../config/request"
 
 function isIterable(value: unknown): value is Iterable<unknown> {
   return typeof value === "object" && value !== null

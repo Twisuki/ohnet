@@ -1,4 +1,4 @@
-import type { OhNetResponse } from "../core/types"
+import type { OhNetResponse } from "../types"
 import type { OhNetResponseLike } from "./types"
 import { OhNetHeader } from "../model/header"
 

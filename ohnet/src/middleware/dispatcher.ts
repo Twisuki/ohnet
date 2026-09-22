@@ -1,20 +1,21 @@
 import type { OhNetAdapter } from "../adapter/types"
-import type { OhNetContext } from "../core/types"
+import type { OhNetContext } from "../types"
 import type {
   OhNetMiddleware,
   OhNetMiddlewareEnterControls,
   OhNetMiddlewareLeaveControls,
 } from "./types"
-import { BaseOhNetError } from "../model/error"
+import { OhNetUnknownError } from "../config/error"
+import { OhNetError } from "../model/error"
 
 export async function run(context: OhNetContext, func: () => Promise<unknown>): Promise<void> {
   try {
     await func()
   }
   catch (error) {
-    context.error = error instanceof BaseOhNetError
+    context.error = error instanceof OhNetError
       ? error
-      : new BaseOhNetError("INTERNAL", 0, "internal error", undefined, error)
+      : new OhNetUnknownError(error)
   }
 }
 

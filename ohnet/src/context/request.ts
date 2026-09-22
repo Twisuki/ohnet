@@ -1,4 +1,4 @@
-import type { OhNetRequest } from "../core/types"
+import type { OhNetRequest } from "../types"
 import type { OhNetRequestConfig } from "./types"
 
 export function resolveRequest(base: OhNetRequest, config: OhNetRequestConfig): OhNetRequest {
