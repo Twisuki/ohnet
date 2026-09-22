@@ -8,21 +8,22 @@ import { appendQuery, buildQueryString, copyContext, createDefaultContext } from
 import { compose } from "@/middleware/dispatcher"
 
 export class OhNetBuilder {
-  adapter: OhNetAdapter | null = null
-  context: OhNetContext = createDefaultContext()
-  middlewares: OhNetMiddleware[] = []
+  #adapter: OhNetAdapter | null
+  #context: OhNetContext
+  #middlewares: OhNetMiddleware[] = []
 
   constructor(config: OhNetConfig) {
-    this.adapter = config.adapter ?? null
+    this.#adapter = config.adapter ?? null
+    this.#context = createDefaultContext()
     this.applyConfig(config)
   }
 
   fork(config: OhNetConfig = {}): OhNetBuilder {
     const child = new OhNetBuilder({})
-    child.adapter = this.adapter
-    child.context = copyContext(this.context)
-    child.context.meta = {}
-    child.middlewares = [...this.middlewares]
+    child.#adapter = this.#adapter
+    child.#context = copyContext(this.#context)
+    child.#context.meta = {}
+    child.#middlewares = [...this.#middlewares]
 
     child.applyConfig(config)
     return child
@@ -33,13 +34,25 @@ export class OhNetBuilder {
   }
 
   with(middleware: OhNetMiddleware): OhNetBuilder {
+    return this.fork().register(middleware)
+  }
+
+  has(name: string): boolean {
+    return this.#middlewares.some(middleware => middleware.name === name)
+  }
+
+  find(name: string): OhNetMiddleware | undefined {
+    return this.#middlewares.find(middleware => middleware.name === name)
+  }
+
+  clean(name: string): OhNetBuilder {
     const child = this.fork()
-    child.middlewares = [...child.middlewares, middleware]
+    child.#middlewares = child.#middlewares.filter(middleware => middleware.name !== name)
     return child
   }
 
   append(path: string): OhNetBuilder {
-    return this.fork({ url: this.context.request.url + path })
+    return this.fork({ url: this.#context.request.url + path })
   }
 
   async request<T>(config: OhNetConfig = {}): Promise<T> {
@@ -74,27 +87,42 @@ export class OhNetBuilder {
     return this.append(path ?? "").request<T>({ method: "OPTIONS", data })
   }
 
+  private register(middleware: OhNetMiddleware): this {
+    const name = middleware.name
+    if (typeof name !== "string" || name.trim() === "") {
+      throw new OhNetInternalError(OHNET_ERROR_CODE.MIDDLEWARE_NAME, OHNET_ERROR_MESSAGE.MIDDLEWARE_NAME)
+    }
+
+    const index = this.#middlewares.findIndex(existing => existing.name === name)
+    if (index === -1)
+      this.#middlewares.push(middleware)
+    else
+      this.#middlewares[index] = middleware
+
+    return this
+  }
+
   private applyConfig(config: OhNetConfig): void {
-    this.context.request = resolveRequest(this.context.request, config)
+    this.#context.request = resolveRequest(this.#context.request, config)
   }
 
   private async run<T>(): Promise<T> {
-    if (!this.adapter) {
+    if (!this.#adapter) {
       throw new OhNetInternalError(OHNET_ERROR_CODE.NO_ADAPTER, OHNET_ERROR_MESSAGE.NO_ADAPTER)
     }
 
-    const { params } = this.context.request
+    const { params } = this.#context.request
     if (params !== undefined) {
-      this.context.request.url = appendQuery(this.context.request.url, buildQueryString(params))
+      this.#context.request.url = appendQuery(this.#context.request.url, buildQueryString(params))
     }
 
-    await compose(this.adapter, this.context, this.middlewares)
-    if (this.context.error) {
-      throw this.context.error
+    await compose(this.#adapter, this.#context, this.#middlewares)
+    if (this.#context.error) {
+      throw this.#context.error
     }
-    if (!this.context.response) {
+    if (!this.#context.response) {
       throw new OhNetInternalError(OHNET_ERROR_CODE.NO_RESPONSE, OHNET_ERROR_MESSAGE.NO_RESPONSE)
     }
-    return this.context.response.data as T
+    return this.#context.response.data as T
   }
 }

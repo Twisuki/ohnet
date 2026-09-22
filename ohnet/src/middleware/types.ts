@@ -10,8 +10,6 @@ export interface OhNetMiddlewareLeaveControls {
   terminate: () => void
 }
 
-export type OhNetMiddlewareControls = OhNetMiddlewareEnterControls | OhNetMiddlewareLeaveControls
-
 export type OhNetMiddlewareEnterHook = (
   adapter: OhNetAdapter,
   context: OhNetContext,
@@ -24,9 +22,8 @@ export type OhNetMiddlewareLeaveHook = (
   controls: OhNetMiddlewareLeaveControls,
 ) => Promise<void>
 
-export type OhNetMiddlewareHook = OhNetMiddlewareEnterHook | OhNetMiddlewareLeaveHook
-
 export abstract class OhNetMiddleware {
+  abstract readonly name: string
   enter?: OhNetMiddlewareEnterHook
   leave?: OhNetMiddlewareLeaveHook
 }

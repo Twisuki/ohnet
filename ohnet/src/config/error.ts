@@ -4,6 +4,7 @@ export const OHNET_ERROR_TYPE = "OHNET_INTERNAL"
 
 export const OHNET_ERROR_CODE = {
   ABORT: "OHNET_ABORT",
+  MIDDLEWARE_NAME: "OHNET_MIDDLEWARE_NAME",
   NETWORK: "OHNET_NETWORK",
   NO_ADAPTER: "OHNET_NO_ADAPTER",
   NO_RESPONSE: "OHNET_NO_RESPONSE",
@@ -13,6 +14,7 @@ export const OHNET_ERROR_CODE = {
 
 export const OHNET_ERROR_MESSAGE = {
   ABORT: "ohnet: aborted",
+  MIDDLEWARE_NAME: "ohnet: invalid middleware name",
   NETWORK: "ohnet: network error",
   NO_ADAPTER: "ohnet: no adapter",
   NO_RESPONSE: "ohnet: no response",
