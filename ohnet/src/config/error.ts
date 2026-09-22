@@ -8,6 +8,7 @@ export const OHNET_ERROR_CODE = {
   NETWORK: "OHNET_NETWORK",
   NO_ADAPTER: "OHNET_NO_ADAPTER",
   NO_RESPONSE: "OHNET_NO_RESPONSE",
+  SKIPPED: "OHNET_SKIPPED",
   TERMINATE: "OHNET_TERMINATE",
   TIMEOUT: "OHNET_TIMEOUT",
 } as const satisfies Record<string, string>
@@ -18,6 +19,7 @@ export const OHNET_ERROR_MESSAGE = {
   NETWORK: "ohnet: network error",
   NO_ADAPTER: "ohnet: no adapter",
   NO_RESPONSE: "ohnet: no response",
+  SKIPPED: "ohnet: middleware skipped",
   TERMINATE: "ohnet: middleware terminated",
   TIMEOUT: "ohnet: timeout",
 } as const satisfies Record<string, string>

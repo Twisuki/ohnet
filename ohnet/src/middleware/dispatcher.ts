@@ -23,7 +23,7 @@ export async function compose(
   adapter: OhNetAdapter,
   context: OhNetContext,
   middlewares: OhNetMiddleware[],
-): Promise<void> {
+): Promise<boolean> {
   const stack: OhNetMiddleware[] = []
   let terminated = false
   let skipped = false
@@ -65,4 +65,6 @@ export async function compose(
     }
     await run(context, () => leave(adapter, context, controls))
   }
+
+  return !terminated && !skipped
 }

@@ -116,13 +116,16 @@ export class OhNetBuilder {
       this.#context.request.url = appendQuery(this.#context.request.url, buildQueryString(params))
     }
 
-    await compose(this.#adapter, this.#context, this.#middlewares)
+    const normal = await compose(this.#adapter, this.#context, this.#middlewares)
     if (this.#context.error) {
       throw this.#context.error
     }
-    if (!this.#context.response) {
-      throw new OhNetInternalError(OHNET_ERROR_CODE.NO_RESPONSE, OHNET_ERROR_MESSAGE.NO_RESPONSE)
+    if (this.#context.response) {
+      return this.#context.response.data as T
     }
-    return this.#context.response.data as T
+    if (!normal) {
+      throw new OhNetInternalError(OHNET_ERROR_CODE.SKIPPED, OHNET_ERROR_MESSAGE.SKIPPED)
+    }
+    throw new OhNetInternalError(OHNET_ERROR_CODE.NO_RESPONSE, OHNET_ERROR_MESSAGE.NO_RESPONSE)
   }
 }
