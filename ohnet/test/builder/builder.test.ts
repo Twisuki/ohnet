@@ -1,6 +1,6 @@
 import type { OhNetAdapter, OhNetContext } from "@twisuki/ohnet"
 import { createResponse, OhNetBuilder } from "@twisuki/ohnet"
-import { describe, expect, it } from "vitest"
+import { afterEach, describe, expect, it, vi } from "vitest"
 
 function recordingAdapter(seen: OhNetContext[]): OhNetAdapter {
   return async (context) => {
@@ -107,5 +107,66 @@ describe("builder - append and HTTP verbs", () => {
     await builder.get("/items", { page: 2 }, { trace: "x" })
     expect(seen[0].request.params).toEqual({ page: 2 })
     expect(seen[0].request.data).toEqual({ trace: "x" })
+  })
+})
+
+describe("builder - default adapter", () => {
+  let originalFetch: typeof globalThis.fetch
+
+  afterEach(() => {
+    globalThis.fetch = originalFetch
+    vi.restoreAllMocks()
+  })
+
+  it("falls back to fetchAdapter when no adapter is passed", async () => {
+    originalFetch = globalThis.fetch
+    const fetchMock = vi.fn().mockResolvedValue(
+      new Response("{\"ok\":true}", { status: 200, headers: { "content-type": "application/json" } }),
+    )
+    globalThis.fetch = fetchMock as unknown as typeof fetch
+
+    const data = await new OhNetBuilder({ url: "https://api.example.com/v1" }).get()
+
+    expect(fetchMock).toHaveBeenCalledTimes(1)
+    expect(fetchMock.mock.calls[0][0]).toBe("https://api.example.com/v1")
+    expect(data).toEqual({ ok: true })
+  })
+
+  it("uses the explicit adapter when one is passed and skips fetchAdapter", async () => {
+    originalFetch = globalThis.fetch
+    const fetchSpy = vi.fn()
+    globalThis.fetch = fetchSpy as unknown as typeof fetch
+
+    const seen: OhNetContext[] = []
+    await new OhNetBuilder({
+      url: "https://api.example.com",
+      adapter: recordingAdapter(seen),
+    }).get()
+
+    expect(fetchSpy).not.toHaveBeenCalled()
+    expect(seen).toHaveLength(1)
+  })
+
+  it("inherits the parent's adapter through fork", async () => {
+    originalFetch = globalThis.fetch
+    const fetchMock = vi.fn().mockResolvedValue(
+      new Response("{\"ok\":true}", { status: 200, headers: { "content-type": "application/json" } }),
+    )
+    globalThis.fetch = fetchMock as unknown as typeof fetch
+
+    const child = new OhNetBuilder({ url: "https://api.example.com" }).fork()
+    await child.get()
+
+    expect(fetchMock).toHaveBeenCalledTimes(1)
+  })
+
+  it("does not invoke the default adapter at construction time", () => {
+    originalFetch = globalThis.fetch
+    const fetchSpy = vi.fn()
+    globalThis.fetch = fetchSpy as unknown as typeof fetch
+
+    const builder = new OhNetBuilder({ url: "https://api.example.com" })
+    expect(builder).toBeInstanceOf(OhNetBuilder)
+    expect(fetchSpy).not.toHaveBeenCalled()
   })
 })

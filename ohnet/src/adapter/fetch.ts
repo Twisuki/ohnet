@@ -46,6 +46,10 @@ async function parseData(response: Response, responseType: OhNetResponseType): P
 }
 
 export async function fetchAdapter(context: OhNetContext): Promise<OhNetResponse> {
+  if (typeof globalThis.fetch !== "function") {
+    throw new OhNetInternalError(OHNET_ERROR_CODE.NO_FETCH, OHNET_ERROR_MESSAGE.NO_FETCH)
+  }
+
   const { url, method, headers, data, signal, timeout, responseType } = context.request
 
   const controller = new AbortController()

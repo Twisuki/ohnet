@@ -2,6 +2,7 @@ import type { OhNetAdapter } from "@/adapter/types"
 import type { OhNetConfig } from "@/context/types"
 import type { OhNetEventHandler, OhNetEventName, OhNetMiddleware } from "@/pipeline/types"
 import type { OhNetContext, OhNetParams } from "@/types"
+import { fetchAdapter } from "@/adapter/fetch"
 import { OhNetEventBuilder } from "@/builder/event"
 import { OhNetMiddlewareBuilder } from "@/builder/middleware"
 import { OHNET_ERROR_CODE, OHNET_ERROR_MESSAGE, OhNetInternalError } from "@/config/error"
@@ -10,13 +11,13 @@ import { appendQuery, buildQueryString, copyContext, createDefaultContext } from
 import { compose } from "@/pipeline/dispatcher"
 
 export class OhNetBuilder {
-  #adapter: OhNetAdapter | null
+  #adapter: OhNetAdapter
   #context: OhNetContext
   #middleware: OhNetMiddlewareBuilder
   #event: OhNetEventBuilder
 
   constructor(config: OhNetConfig) {
-    this.#adapter = config.adapter ?? null
+    this.#adapter = config.adapter === undefined ? fetchAdapter : config.adapter
     this.#context = createDefaultContext()
     this.#middleware = new OhNetMiddlewareBuilder()
     this.#event = new OhNetEventBuilder()
@@ -111,10 +112,6 @@ export class OhNetBuilder {
   }
 
   private async run<T>(): Promise<T> {
-    if (!this.#adapter) {
-      throw new OhNetInternalError(OHNET_ERROR_CODE.NO_ADAPTER, OHNET_ERROR_MESSAGE.NO_ADAPTER)
-    }
-
     const { params } = this.#context.request
     if (params !== undefined) {
       this.#context.request.url = appendQuery(this.#context.request.url, buildQueryString(params))
