@@ -27,6 +27,8 @@ export interface OhNetRequestConfig {
   signal?: OhNetSignal
   /** Timeout in milliseconds. `undefined` disables the timeout. */
   timeout?: number
+  /** Maximum middleware-driven retries per request. Defaults to `1`. */
+  middlewareRetries?: number
   /** Body decoding strategy for the adapter. */
   responseType?: OhNetResponseType
 }

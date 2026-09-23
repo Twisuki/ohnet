@@ -57,6 +57,12 @@ export const OHNET_ERROR_CODE = {
    */
   NO_RESPONSE: "OHNET_NO_RESPONSE",
   /**
+   * Middleware kept calling `controls.retry()` past
+   * `request.middlewareRetries`. The previous attempt's
+   * response is left on `context.response`.
+   */
+  RETRY_EXHAUSTED: "OHNET_RETRY_EXHAUSTED",
+  /**
    * A middleware called `controls.skip()` (or `terminate()` in enter) and
    * no other middleware wrote a response. The adapter did not run.
    */
@@ -81,6 +87,7 @@ export const OHNET_ERROR_MESSAGE = {
   NETWORK: "ohnet: network error",
   NO_FETCH: "ohnet: fetch is not available; pass an explicit adapter",
   NO_RESPONSE: "ohnet: no response",
+  RETRY_EXHAUSTED: "ohnet: middleware retry exhausted",
   SKIPPED: "ohnet: pipeline skipped",
   TIMEOUT: "ohnet: timeout",
 } as const satisfies Record<string, string>

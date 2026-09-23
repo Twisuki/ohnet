@@ -14,9 +14,15 @@ import type { OhNetContext } from "@/types"
  * order; exceptions are swallowed by the emitter and do not affect the
  * pipeline outcome.
  *
- * Lifecycle order on a successful request:
- * `START` -> enter middlewares -> `REQUEST` -> adapter -> `RESPONSE`
- * -> leave middlewares -> `SUCCESS` -> `FINISH`
+ * `START` fires once at the top of the call.
+ *
+ * Each attempt fires `REQUEST` -> adapter -> `RESPONSE` -> leave
+ * middlewares -> `SUCCESS` / `ERROR` / `SKIP` -> `FINISH`.
+ *
+ * When a middleware calls `controls.retry()` and the dispatcher
+ * decides to run another attempt, `RETRY` fires at the top of that
+ * retry attempt. The cycle repeats until the request resolves or
+ * `OHNET_RETRY_EXHAUSTED` is thrown.
  *
  * @example
  * ```ts
@@ -32,6 +38,12 @@ export const OHNET_EVENT = {
    * `context.response` and `context.error` are both `null`.
    */
   START: "on_start",
+  /**
+   * Fires at the top of a retry attempt (any attempt after the first).
+   * Not fired on the first attempt; observers can read
+   * `controls.retryCount` to know which retry number this is.
+   */
+  RETRY: "on_retry",
   /**
    * All middleware `enter` hooks have run and the adapter is about to be
    * called. `context.request` reflects every middleware mutation so far.
@@ -107,16 +119,27 @@ export interface OhNetMiddlewareEnterControls {
    * prevents any cleanup in middlewares that were entered.
    */
   terminate: () => void
+  /**
+   * Marks the request for retry: the dispatcher re-runs the entire
+   * pipeline (enter hooks, adapter, leave hooks). Capped at
+   * `request.middlewareRetries`; once exceeded the request fails with
+   * `OHNET_RETRY_EXHAUSTED`. The previous attempt's `response` stays
+   * on `context.response` until the next adapter call.
+   */
+  retry: () => void
+  /** Retries before this hook runs; `0` on the initial attempt. */
+  readonly retryCount: number
 }
 
 /**
  * Controls available to a middleware `leave` hook.
  *
  * @remarks
- * Only `terminate` is exposed here because there is no work to skip on
- * the way out: leave hooks fire in reverse registration order, and
- * skipping one would just mean the rest of the chain runs against a
- * partially torn-down context.
+ * Only `terminate` and `retry` are exposed here; there is no `skip`
+ * because there is no work to skip on the way out - leave hooks fire
+ * in reverse registration order, and skipping one would just mean
+ * the rest of the chain runs against a partially torn-down context.
+ * `retry` re-runs the pipeline from the top, same as on enter.
  */
 export interface OhNetMiddlewareLeaveControls {
   /**
@@ -125,6 +148,16 @@ export interface OhNetMiddlewareLeaveControls {
    * was already produced.
    */
   terminate: () => void
+  /**
+   * Marks the request for retry. Same semantics as
+   * {@link OhNetMiddlewareEnterControls.retry}: the dispatcher re-runs
+   * the pipeline from the top, capped at `request.middlewareRetries`.
+   * The previous attempt's response stays on `context.response` until
+   * the next adapter call.
+   */
+  retry: () => void
+  /** Retries before this hook runs; `0` on the initial attempt. */
+  readonly retryCount: number
 }
 
 /**

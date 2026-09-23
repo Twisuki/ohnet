@@ -115,3 +115,148 @@ describe("builder run - error and missing response", () => {
     expect(await codeOf(builder.get())).toBe("OHNET_CUSTOM")
   })
 })
+
+describe("builder run - retry semantics", () => {
+  it("returns the response data when middleware retries after a 401", async () => {
+    let calls = 0
+    const adapter: OhNetAdapter = async (context) => {
+      calls++
+      if (calls === 1) {
+        return createResponse({ status: 401, url: context.request.url, headers: {}, data: null })
+      }
+      return createResponse({ status: 200, url: context.request.url, headers: {}, data: "ok" })
+    }
+    const builder = new OhNetBuilder({ url: "https://example.com", adapter })
+      .with(middleware("auth", {
+        async leave(_adapter, context, controls) {
+          if (context.response?.status === 401) {
+            controls.retry()
+          }
+        },
+      }))
+    await expect(builder.get()).resolves.toBe("ok")
+    expect(calls).toBe(2)
+  })
+
+  it("also returns the response data when retry is called from the enter hook", async () => {
+    let calls = 0
+    const adapter: OhNetAdapter = async (context) => {
+      calls++
+      return createResponse({ status: 200, url: context.request.url, headers: {}, data: "ok" })
+    }
+    const builder = new OhNetBuilder({ url: "https://example.com", adapter })
+      .with(middleware("precheck", {
+        async enter(_adapter, context, controls) {
+          if (!context.request.headers.has("x-pre")) {
+            context.request.headers.set("x-pre", "yes")
+            controls.retry()
+          }
+        },
+      }))
+    await expect(builder.get()).resolves.toBe("ok")
+    expect(calls).toBe(1)
+  })
+
+  it("throws RETRY_EXHAUSTED when retry budget is exceeded (middlewareRetries default = 1)", async () => {
+    const builder = createBuilder().with(middleware("always-retry", {
+      async leave(_adapter, _context, controls) {
+        controls.retry()
+      },
+    }))
+    expect(await codeOf(builder.get())).toBe(OHNET_ERROR_CODE.RETRY_EXHAUSTED)
+  })
+
+  it("exhausts on the first retry when middlewareRetries is 0", async () => {
+    let calls = 0
+    const adapter: OhNetAdapter = async (context) => {
+      calls++
+      return createResponse({ status: 200, url: context.request.url, headers: {}, data: "ok" })
+    }
+    const builder = new OhNetBuilder({ url: "https://example.com", middlewareRetries: 0, adapter })
+      .with(middleware("always-retry", {
+        async leave(_adapter, _context, controls) {
+          controls.retry()
+        },
+      }))
+    expect(await codeOf(builder.get())).toBe(OHNET_ERROR_CODE.RETRY_EXHAUSTED)
+    expect(calls).toBe(1)
+  })
+
+  it("allows the configured number of retries before exhausting (middlewareRetries: 2)", async () => {
+    let calls = 0
+    const adapter: OhNetAdapter = async (context) => {
+      calls++
+      return createResponse({ status: 200, url: context.request.url, headers: {}, data: "ok" })
+    }
+    const builder = new OhNetBuilder({ url: "https://example.com", middlewareRetries: 2, adapter })
+      .with(middleware("always-retry", {
+        async leave(_adapter, _context, controls) {
+          controls.retry()
+        },
+      }))
+    expect(await codeOf(builder.get())).toBe(OHNET_ERROR_CODE.RETRY_EXHAUSTED)
+    expect(calls).toBe(3)
+  })
+
+  it("skips the leave chain when retry is called in enter (the discard-attempt semantic)", async () => {
+    const leaveSeen: string[] = []
+    const builder = createBuilder()
+      .with(middleware("discard", {
+        async enter(_adapter, _context, controls) {
+          controls.retry()
+        },
+        async leave() {
+          leaveSeen.push("discard")
+        },
+      }))
+      .with(middleware("leaver", {
+        async leave() {
+          leaveSeen.push("leaver")
+        },
+      }))
+    expect(await codeOf(builder.get())).toBe(OHNET_ERROR_CODE.RETRY_EXHAUSTED)
+    expect(leaveSeen).toEqual([])
+  })
+
+  it("skips remaining leave hooks when retry is called in a leave hook", async () => {
+    const leaveSeen: string[] = []
+    const builder = createBuilder()
+      .with(middleware("a", {
+        async leave() {
+          leaveSeen.push("a")
+        },
+      }))
+      .with(middleware("b", {
+        async leave() {
+          leaveSeen.push("b")
+        },
+      }))
+      .with(middleware("c", {
+        async leave(_adapter, _context, controls) {
+          leaveSeen.push("c")
+          controls.retry()
+        },
+      }))
+    expect(await codeOf(builder.get())).toBe(OHNET_ERROR_CODE.RETRY_EXHAUSTED)
+    expect(leaveSeen).toEqual(["c", "c"])
+  })
+
+  it("increments controls.retryCount across attempts (0 on initial, 1 on first retry, 2 on second)", async () => {
+    const seenRetryCounts: number[] = []
+    const builder = new OhNetBuilder({
+      url: "https://example.com",
+      middlewareRetries: 2,
+      adapter: async context =>
+        createResponse({ status: 200, url: context.request.url, headers: {}, data: "ok" }),
+    }).with(middleware("counter", {
+      async enter(_adapter, _context, controls) {
+        seenRetryCounts.push(controls.retryCount)
+        if (controls.retryCount < 2) {
+          controls.retry()
+        }
+      },
+    }))
+    await builder.get()
+    expect(seenRetryCounts).toEqual([0, 1, 2])
+  })
+})

@@ -151,3 +151,90 @@ describe("builder run - skip result event", () => {
     expect(log).toEqual(["error"])
   })
 })
+
+describe("builder run - retry events", () => {
+  it("fires START once even when middleware retries", async () => {
+    let startCount = 0
+    const builder = new OhNetBuilder({
+      url: "https://example.com",
+      adapter: async context =>
+        createResponse({ status: 200, url: context.request.url, headers: {}, data: "ok" }),
+    })
+      .on(OHNET_EVENT.START, () => startCount++)
+      .with({
+        name: "retry",
+        async leave(_adapter, _context, controls) {
+          controls.retry()
+        },
+      })
+    await builder.get().catch(() => {})
+    expect(startCount).toBe(1)
+  })
+
+  it("fires RETRY at the top of each retry attempt, not on the first", async () => {
+    let retryCount = 0
+    const builder = new OhNetBuilder({
+      url: "https://example.com",
+      middlewareRetries: 2,
+      adapter: async context =>
+        createResponse({ status: 200, url: context.request.url, headers: {}, data: "ok" }),
+    })
+      .on(OHNET_EVENT.RETRY, () => retryCount++)
+      .with({
+        name: "retry",
+        async leave(_adapter, _context, controls) {
+          controls.retry()
+        },
+      })
+    await builder.get().catch(() => {})
+    expect(retryCount).toBe(2)
+  })
+
+  it("fires REQUEST and RESPONSE once per attempt", async () => {
+    let requestCount = 0
+    let responseCount = 0
+    const builder = new OhNetBuilder({
+      url: "https://example.com",
+      middlewareRetries: 2,
+      adapter: async context =>
+        createResponse({ status: 200, url: context.request.url, headers: {}, data: "ok" }),
+    })
+      .on(OHNET_EVENT.REQUEST, () => requestCount++)
+      .on(OHNET_EVENT.RESPONSE, () => responseCount++)
+      .with({
+        name: "retry",
+        async leave(_adapter, _context, controls) {
+          controls.retry()
+        },
+      })
+    await builder.get().catch(() => {})
+    expect(requestCount).toBe(3)
+    expect(responseCount).toBe(3)
+  })
+
+  it("fires terminal events once on the final attempt", async () => {
+    const order: string[] = []
+    let calls = 0
+    const adapter = async (context: OhNetContext) => {
+      calls++
+      if (calls === 1) {
+        return createResponse({ status: 401, url: context.request.url, headers: {}, data: null })
+      }
+      return createResponse({ status: 200, url: context.request.url, headers: {}, data: "ok" })
+    }
+    const builder = new OhNetBuilder({ url: "https://example.com", adapter })
+      .on(OHNET_EVENT.SUCCESS, () => order.push("success"))
+      .on(OHNET_EVENT.ERROR, () => order.push("error"))
+      .on(OHNET_EVENT.FINISH, () => order.push("finish"))
+      .with({
+        name: "auth",
+        async leave(_adapter, context, controls) {
+          if (context.response?.status === 401) {
+            controls.retry()
+          }
+        },
+      })
+    await builder.get()
+    expect(order).toEqual(["success", "finish"])
+  })
+})

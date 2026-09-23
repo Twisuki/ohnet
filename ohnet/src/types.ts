@@ -85,6 +85,8 @@ export interface OhNetRequest {
   signal?: OhNetSignal
   /** Timeout in milliseconds. Adapters may abort the request when it elapses. */
   timeout?: number
+  /** Maximum middleware-driven retries per request. Defaults to `1`. */
+  middlewareRetries?: number
   /** Body decoding strategy. See {@link OhNetResponseType}. */
   responseType: OhNetResponseType
 }
@@ -105,7 +107,7 @@ export interface OhNetResponse<T = unknown> {
   status: number
   /** HTTP status text. Empty string when the transport did not provide one. */
   statusText: string
-  /** True when `status` is in the 200–299 range, unless the adapter overrides it. */
+  /** True when `status` is in the 200-299 range, unless the adapter overrides it. */
   ok: boolean
   /** Response headers as an `OhNetHeader`. */
   headers: OhNetHeader
