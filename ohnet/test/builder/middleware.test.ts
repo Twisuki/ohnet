@@ -21,8 +21,8 @@ function recorder(name: string, tag: string, log: string[]): OhNetMiddleware {
   }
 }
 
-describe("builder middleware registration", () => {
-  it("replaces the middleware with the same name", async () => {
+describe("builder - middleware registration", () => {
+  it("replaces a middleware with the same name", async () => {
     const log: string[] = []
     const oldAuth = recorder("auth", "auth-old", log)
     const newAuth = recorder("auth", "auth-new", log)
@@ -40,7 +40,7 @@ describe("builder middleware registration", () => {
     expect(log).toEqual(["enter:auth-new", "enter:logger", "leave:logger", "leave:auth-new"])
   })
 
-  it("keeps registration order when replacing", async () => {
+  it("keeps the registration order when replacing", async () => {
     const log: string[] = []
     const builder = createBuilder()
       .with(recorder("a", "a-old", log))
@@ -63,23 +63,16 @@ describe("builder middleware registration", () => {
     expect(log).toEqual(["enter:auth", "leave:auth"])
   })
 
-  it("throws when the middleware name is empty", () => {
+  it("rejects an empty or whitespace-only middleware name", () => {
     const log: string[] = []
     expect(() => createBuilder().with(recorder("", "x", log))).toThrow(OhNetError)
-
-    try {
-      createBuilder().with(recorder("  ", "x", log))
-      expect.unreachable("expected an error to be thrown")
-    }
-    catch (error) {
-      expect(error).toBeInstanceOf(OhNetError)
-      expect((error as OhNetError).code).toBe(OHNET_ERROR_CODE.MIDDLEWARE_NAME)
-    }
+    expect(() => createBuilder().with(recorder("  ", "x", log)))
+      .toThrow(expect.objectContaining({ code: OHNET_ERROR_CODE.MIDDLEWARE_NAME }))
   })
 })
 
-describe("builder middleware operations", () => {
-  it("has / get query registered middlewares", () => {
+describe("builder - middleware queries", () => {
+  it("has and get report registered middlewares", () => {
     const log: string[] = []
     const auth = recorder("auth", "auth", log)
     const builder = createBuilder().with(auth)
@@ -113,7 +106,7 @@ describe("builder middleware operations", () => {
     expect(cleaned.middleware.get("auth")).toBeDefined()
   })
 
-  it("does not mutate the parent builder on fork or clean", () => {
+  it("returns a new builder on with and clean without mutating the parent", () => {
     const log: string[] = []
     const parent = createBuilder().with(recorder("auth", "auth", log))
     const child = parent.with(recorder("logger", "logger", log))
@@ -127,8 +120,8 @@ describe("builder middleware operations", () => {
   })
 })
 
-describe("ohnet middleware subclass", () => {
-  it("supports declaring name via a subclass", async () => {
+describe("builder - middleware subclass", () => {
+  it("reads the name from a subclass field", async () => {
     const log: string[] = []
 
     class TagMiddleware extends Middleware {

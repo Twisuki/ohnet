@@ -16,12 +16,12 @@ function createBuilder(adapter?: OhNetAdapter): OhNetBuilder {
   })
 }
 
-describe("builder run · middleware flow", () => {
-  it("runs without middlewares and returns the response data", async () => {
+describe("builder run - middleware flow", () => {
+  it("returns the response data with no middlewares", async () => {
     await expect(createBuilder().get()).resolves.toBe("ok")
   })
 
-  it("runs observe-only middlewares without affecting the response", async () => {
+  it("runs observe-only middlewares without changing the response", async () => {
     const log: string[] = []
     const builder = createBuilder()
       .with(middleware("enter-only", { async enter() { log.push("enter") } }))
@@ -30,7 +30,7 @@ describe("builder run · middleware flow", () => {
     expect(log).toEqual(["enter", "leave"])
   })
 
-  it("runs enter in registration order and leave in reverse order across multiple middlewares", async () => {
+  it("runs enter in registration order and leave in reverse order", async () => {
     const log: string[] = []
     const builder = createBuilder()
       .with(middleware("a", {
@@ -56,7 +56,7 @@ describe("builder run · middleware flow", () => {
     ])
   })
 
-  it("lets middlewares mutate the request — headers flow downstream to the adapter", async () => {
+  it("lets middlewares mutate the request, headers flow downstream to the adapter", async () => {
     const seen: { auth: string | null }[] = []
     const builder = new OhNetBuilder({
       url: "https://example.com",
@@ -73,7 +73,7 @@ describe("builder run · middleware flow", () => {
     expect(seen[0].auth).toBe("Bearer x")
   })
 
-  it("lets middlewares write context.meta — subsequent middlewares can read it", async () => {
+  it("lets middlewares write context.meta for later middlewares to read", async () => {
     const seen: Record<string, unknown>[] = []
     const builder = createBuilder()
       .with(middleware("writer", {

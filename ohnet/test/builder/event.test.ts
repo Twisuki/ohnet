@@ -12,8 +12,8 @@ function createBuilder(): OhNetBuilder {
   })
 }
 
-describe("event handler registration", () => {
-  it("emit triggers the registered handler", () => {
+describe("builder - event registration", () => {
+  it("fires the registered handler when emit is called", () => {
     const builder = createBuilder()
     const calls: string[] = []
     const eb = builder.event.on(OHNET_EVENT.START, () => calls.push("start"))
@@ -21,7 +21,7 @@ describe("event handler registration", () => {
     expect(calls).toEqual(["start"])
   })
 
-  it("emits to multiple handlers in registration order", () => {
+  it("runs multiple handlers in registration order", () => {
     const builder = createBuilder()
     const calls: string[] = []
     const eb = builder.event
@@ -53,12 +53,12 @@ describe("event handler registration", () => {
     expect(calls).toEqual([])
   })
 
-  it("off on an event with no registrations is a no-op", () => {
+  it("off is a no-op when no handlers are registered", () => {
     const builder = createBuilder()
     expect(() => builder.event.off(OHNET_EVENT.SUCCESS, () => {})).not.toThrow()
   })
 
-  it("on / off are immutable — parent is not mutated", () => {
+  it("on returns a new event builder without mutating the parent", () => {
     const parent = createBuilder()
     const parentCalls: string[] = []
     const childCalls: string[] = []
@@ -76,8 +76,8 @@ describe("event handler registration", () => {
   })
 })
 
-describe("event emit semantics", () => {
-  it("emit silently swallows handler errors", () => {
+describe("builder - event emit and list", () => {
+  it("swallows handler errors without breaking emit", () => {
     const builder = createBuilder()
     const calls: string[] = []
     const eb = builder.event
@@ -87,12 +87,12 @@ describe("event emit semantics", () => {
     expect(calls).toEqual(["ok"])
   })
 
-  it("emit on an unregistered event is a no-op", () => {
+  it("emit is a no-op when no handler is registered", () => {
     const builder = createBuilder()
     expect(() => builder.event.emit(OHNET_EVENT.SUCCESS, fakeAdapter, fakeContext)).not.toThrow()
   })
 
-  it("list returns the registered handlers for an event", () => {
+  it("list(event) returns the handlers for that event", () => {
     const builder = createBuilder()
     const h1 = () => {}
     const h2 = () => {}
@@ -103,7 +103,7 @@ describe("event emit semantics", () => {
     expect(list).toContain(h2)
   })
 
-  it("list without event returns handlers across all events", () => {
+  it("list() returns handlers across all events", () => {
     const builder = createBuilder()
     const eb = builder.event
       .on(OHNET_EVENT.START, () => {})

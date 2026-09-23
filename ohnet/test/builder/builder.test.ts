@@ -13,7 +13,7 @@ function createBuilder(adapter: OhNetAdapter = recordingAdapter([])): OhNetBuild
   return new OhNetBuilder({ url: "https://api.example.com", adapter })
 }
 
-describe("ohNetBuilder.fork", () => {
+describe("builder - fork", () => {
   it("returns a new OhNetBuilder instance", () => {
     const parent = createBuilder()
     const child = parent.fork()
@@ -21,7 +21,7 @@ describe("ohNetBuilder.fork", () => {
     expect(child).toBeInstanceOf(OhNetBuilder)
   })
 
-  it("child does not mutate the parent — config applied only to the child", async () => {
+  it("applies the override config without mutating the parent", async () => {
     const seen: OhNetContext[] = []
     const parent = new OhNetBuilder({
       url: "https://api.example.com",
@@ -33,7 +33,7 @@ describe("ohNetBuilder.fork", () => {
     expect(seen[0].request.url).toBe("https://other.example.com")
   })
 
-  it("add forwards to fork(config)", async () => {
+  it("add(config) behaves the same as fork(config)", async () => {
     const seen: OhNetContext[] = []
     const parent = new OhNetBuilder({
       url: "https://api.example.com",
@@ -49,21 +49,21 @@ describe("ohNetBuilder.fork", () => {
   })
 })
 
-describe("ohNetBuilder getters", () => {
-  it("get middleware exposes the middleware builder", () => {
+describe("builder - getters", () => {
+  it("exposes the middleware builder", () => {
     const builder = createBuilder()
     expect(builder.middleware.has("missing")).toBe(false)
     expect(builder.middleware.list()).toEqual([])
   })
 
-  it("get event exposes the event builder", () => {
+  it("exposes the event builder", () => {
     const builder = createBuilder()
     expect(builder.event.list()).toEqual([])
   })
 })
 
-describe("ohNetBuilder.append + HTTP verbs", () => {
-  it("appends the path to the request url", async () => {
+describe("builder - append and HTTP verbs", () => {
+  it("appends the path to the base url", async () => {
     const seen: OhNetContext[] = []
     const builder = new OhNetBuilder({
       url: "https://api.example.com",
@@ -73,7 +73,7 @@ describe("ohNetBuilder.append + HTTP verbs", () => {
     expect(seen[0].request.url).toBe("https://api.example.com/users")
   })
 
-  it("hTTP verbs set the correct method on the request", async () => {
+  it("the HTTP verb helpers each set the matching request method", async () => {
     const seen: OhNetContext[] = []
     const builder = new OhNetBuilder({
       url: "https://api.example.com",
@@ -98,7 +98,7 @@ describe("ohNetBuilder.append + HTTP verbs", () => {
     ])
   })
 
-  it("verb accepts GET with params and body", async () => {
+  it("get forwards path, params, and body to the request", async () => {
     const seen: OhNetContext[] = []
     const builder = new OhNetBuilder({
       url: "https://api.example.com",

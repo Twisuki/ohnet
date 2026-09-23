@@ -47,7 +47,7 @@ describe("model OhNetHeader", () => {
       expect(h.get("x-b")).toBe("v2")
     })
 
-    it("from native Headers", () => {
+    it("from the native Headers instance", () => {
       const native = new Headers()
       native.append("X-Foo", "bar")
       native.append("Content-Type", "application/json")
@@ -133,12 +133,17 @@ describe("model OhNetHeader", () => {
       expect(() => h.set("x-a", "bad\0value")).toThrow(TypeError)
     })
 
-    it("returns this for chaining (set, append); delete returns boolean", () => {
+    it("set and append return this for chaining", () => {
       const h = new OhNetHeader()
       expect(h.set("x", "1")).toBe(h)
       expect(h.append("x", "2")).toBe(h)
-      expect(h.delete("x")).toBe(true)
+    })
+
+    it("delete returns true on hit and false on miss", () => {
+      const h = new OhNetHeader()
       expect(h.delete("x")).toBe(false)
+      h.set("x", "1")
+      expect(h.delete("x")).toBe(true)
     })
   })
 
@@ -189,7 +194,7 @@ describe("model OhNetHeader", () => {
       expect(b.get("x")).toBe("2")
     })
 
-    it("concat combines (right wins for set, appends for multi)", () => {
+    it("concat replaces each key with the right-side value(s)", () => {
       const a = new OhNetHeader({ x: "1", y: "1" })
       const b = new OhNetHeader({ x: "2", z: "2" })
       const c = a.concat(b)
@@ -220,7 +225,7 @@ describe("model OhNetHeader", () => {
       expect(h.toJSON()).toEqual(h.toRecord())
     })
 
-    it("jSON.stringify works (auto-toJSON)", () => {
+    it("toJSON is invoked by JSON.stringify automatically", () => {
       const h = new OhNetHeader({ x: "1", y: "2" })
       expect(JSON.stringify(h)).toBe("{\"x\":\"1\",\"y\":\"2\"}")
     })
