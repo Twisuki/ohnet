@@ -31,10 +31,10 @@ describe("builder middleware registration", () => {
       .with(recorder("logger", "logger", log))
       .with(newAuth)
 
-    expect(builder.has("auth")).toBe(true)
-    expect(builder.has("logger")).toBe(true)
-    expect(builder.find("auth")).toBe(newAuth)
-    expect(builder.find("auth")).not.toBe(oldAuth)
+    expect(builder.middleware.has("auth")).toBe(true)
+    expect(builder.middleware.has("logger")).toBe(true)
+    expect(builder.middleware.get("auth")).toBe(newAuth)
+    expect(builder.middleware.get("auth")).not.toBe(oldAuth)
 
     await builder.get()
     expect(log).toEqual(["enter:auth-new", "enter:logger", "leave:logger", "leave:auth-new"])
@@ -57,7 +57,7 @@ describe("builder middleware registration", () => {
     const middleware = recorder("auth", "auth", log)
     const builder = createBuilder().with(middleware).with(middleware)
 
-    expect(builder.find("auth")).toBe(middleware)
+    expect(builder.middleware.get("auth")).toBe(middleware)
 
     await builder.get()
     expect(log).toEqual(["enter:auth", "leave:auth"])
@@ -79,15 +79,15 @@ describe("builder middleware registration", () => {
 })
 
 describe("builder middleware operations", () => {
-  it("has / find query registered middlewares", () => {
+  it("has / get query registered middlewares", () => {
     const log: string[] = []
     const auth = recorder("auth", "auth", log)
     const builder = createBuilder().with(auth)
 
-    expect(builder.has("auth")).toBe(true)
-    expect(builder.has("missing")).toBe(false)
-    expect(builder.find("auth")).toBe(auth)
-    expect(builder.find("missing")).toBeUndefined()
+    expect(builder.middleware.has("auth")).toBe(true)
+    expect(builder.middleware.has("missing")).toBe(false)
+    expect(builder.middleware.get("auth")).toBe(auth)
+    expect(builder.middleware.get("missing")).toBeUndefined()
   })
 
   it("clean removes the middleware by name", async () => {
@@ -97,8 +97,8 @@ describe("builder middleware operations", () => {
       .with(recorder("logger", "logger", log))
       .clean("auth")
 
-    expect(builder.has("auth")).toBe(false)
-    expect(builder.has("logger")).toBe(true)
+    expect(builder.middleware.has("auth")).toBe(false)
+    expect(builder.middleware.has("logger")).toBe(true)
 
     await builder.get()
     expect(log).toEqual(["enter:logger", "leave:logger"])
@@ -109,21 +109,21 @@ describe("builder middleware operations", () => {
     const builder = createBuilder().with(recorder("auth", "auth", log))
     const cleaned = builder.clean("missing")
 
-    expect(cleaned.has("auth")).toBe(true)
-    expect(cleaned.find("auth")).toBeDefined()
+    expect(cleaned.middleware.has("auth")).toBe(true)
+    expect(cleaned.middleware.get("auth")).toBeDefined()
   })
 
-  it("does not mutate the parent builder on fork", () => {
+  it("does not mutate the parent builder on fork or clean", () => {
     const log: string[] = []
     const parent = createBuilder().with(recorder("auth", "auth", log))
     const child = parent.with(recorder("logger", "logger", log))
     const cleaned = parent.clean("auth")
 
-    expect(parent.has("logger")).toBe(false)
-    expect(parent.find("auth")).toBeDefined()
-    expect(child.has("logger")).toBe(true)
-    expect(child.find("auth")).toBeDefined()
-    expect(cleaned.has("auth")).toBe(false)
+    expect(parent.middleware.has("logger")).toBe(false)
+    expect(parent.middleware.get("auth")).toBeDefined()
+    expect(child.middleware.has("logger")).toBe(true)
+    expect(child.middleware.has("auth")).toBe(true)
+    expect(cleaned.middleware.has("auth")).toBe(false)
   })
 })
 

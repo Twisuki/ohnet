@@ -1,5 +1,6 @@
 export type { OhNetAdapter } from "@/adapter/types"
 export { OhNetBuilder } from "@/builder"
+export { OhNetMiddlewareBuilder } from "@/builder/middleware"
 export {
   OHNET_ERROR_CODE,
   OHNET_ERROR_MESSAGE,

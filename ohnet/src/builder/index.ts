@@ -2,6 +2,7 @@ import type { OhNetAdapter } from "@/adapter/types"
 import type { OhNetConfig } from "@/context/types"
 import type { OhNetMiddleware } from "@/middleware/types"
 import type { OhNetContext, OhNetParams } from "@/types"
+import { OhNetMiddlewareBuilder } from "@/builder/middleware"
 import { OHNET_ERROR_CODE, OHNET_ERROR_MESSAGE, OhNetInternalError } from "@/config/error"
 import { resolveRequest } from "@/context/request"
 import { appendQuery, buildQueryString, copyContext, createDefaultContext } from "@/context/utils"
@@ -10,11 +11,12 @@ import { compose } from "@/middleware/dispatcher"
 export class OhNetBuilder {
   #adapter: OhNetAdapter | null
   #context: OhNetContext
-  #middlewares: OhNetMiddleware[] = []
+  middleware: OhNetMiddlewareBuilder
 
   constructor(config: OhNetConfig) {
     this.#adapter = config.adapter ?? null
     this.#context = createDefaultContext()
+    this.middleware = new OhNetMiddlewareBuilder()
     this.applyConfig(config)
   }
 
@@ -23,8 +25,7 @@ export class OhNetBuilder {
     child.#adapter = this.#adapter
     child.#context = copyContext(this.#context)
     child.#context.meta = {}
-    child.#middlewares = [...this.#middlewares]
-
+    child.middleware = this.middleware.fork(this.middleware.list())
     child.applyConfig(config)
     return child
   }
@@ -34,20 +35,14 @@ export class OhNetBuilder {
   }
 
   with(middleware: OhNetMiddleware): OhNetBuilder {
-    return this.fork().register(middleware)
-  }
-
-  has(name: string): boolean {
-    return this.#middlewares.some(middleware => middleware.name === name)
-  }
-
-  find(name: string): OhNetMiddleware | undefined {
-    return this.#middlewares.find(middleware => middleware.name === name)
+    const child = this.fork()
+    child.middleware = this.middleware.with(middleware)
+    return child
   }
 
   clean(name: string): OhNetBuilder {
     const child = this.fork()
-    child.#middlewares = child.#middlewares.filter(middleware => middleware.name !== name)
+    child.middleware = this.middleware.clean(name)
     return child
   }
 
@@ -87,21 +82,6 @@ export class OhNetBuilder {
     return this.append(path ?? "").request<T>({ method: "OPTIONS", data })
   }
 
-  private register(middleware: OhNetMiddleware): this {
-    const name = middleware.name
-    if (typeof name !== "string" || name.trim() === "") {
-      throw new OhNetInternalError(OHNET_ERROR_CODE.MIDDLEWARE_NAME, OHNET_ERROR_MESSAGE.MIDDLEWARE_NAME)
-    }
-
-    const index = this.#middlewares.findIndex(existing => existing.name === name)
-    if (index === -1)
-      this.#middlewares.push(middleware)
-    else
-      this.#middlewares[index] = middleware
-
-    return this
-  }
-
   private applyConfig(config: OhNetConfig): void {
     this.#context.request = resolveRequest(this.#context.request, config)
   }
@@ -116,7 +96,7 @@ export class OhNetBuilder {
       this.#context.request.url = appendQuery(this.#context.request.url, buildQueryString(params))
     }
 
-    const normal = await compose(this.#adapter, this.#context, this.#middlewares)
+    const normal = await compose(this.#adapter, this.#context, this.middleware.list())
     if (this.#context.error) {
       throw this.#context.error
     }
