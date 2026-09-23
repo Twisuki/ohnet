@@ -14,6 +14,23 @@ function stringifyPair(key: string, value: unknown): string[] {
   return [`${encodeURIComponent(key)}=${encodeURIComponent(String(value))}`]
 }
 
+/**
+ * Serializes a query string source into an encoded string.
+ *
+ * @remarks
+ * Three input shapes are accepted (see {@link OhNetParams}):
+ * - `string` - returned verbatim after stripping a leading `?`.
+ * - `Record<string, unknown>` - entries are URL-encoded in insertion
+ *   order. Arrays expand into repeated keys (`tag=a&tag=b`); `null`
+ *   and `undefined` values are skipped.
+ * - `Iterable<[name, value]>` - raw pair iteration for callers that
+ *   need to preserve order or emit duplicate keys.
+ *
+ * The result has no leading `?`. Callers that append the result to a
+ * URL are responsible for adding the separator (see {@link appendQuery}).
+ *
+ * @param params - Query string source in any accepted shape.
+ */
 export function buildQueryString(params: OhNetParams): string {
   if (typeof params === "string")
     return params.replace(/^\?/, "")
@@ -32,6 +49,7 @@ export function buildQueryString(params: OhNetParams): string {
   return pairs.join("&")
 }
 
+/** Appends `query` to `url` with the appropriate `?` or `&` separator; no-op when `query` is empty. */
 export function appendQuery(url: string, query: string): string {
   if (!query)
     return url
@@ -52,6 +70,7 @@ function copyResponse(response: OhNetResponse): OhNetResponse {
   }
 }
 
+/** Returns a shallow clone of `context` with a deep-cloned request, a fresh `meta` bag, and a cloned response when present. */
 export function copyContext(context: OhNetContext): OhNetContext {
   return {
     request: copyRequest(context.request),
@@ -61,6 +80,7 @@ export function copyContext(context: OhNetContext): OhNetContext {
   }
 }
 
+/** Returns a fresh context seeded with the default {@link DEFAULT_OHNET_REQUEST}. */
 export function createDefaultContext(): OhNetContext {
   return {
     request: copyRequest(DEFAULT_OHNET_REQUEST),

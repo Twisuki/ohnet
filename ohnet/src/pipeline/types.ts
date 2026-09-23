@@ -10,7 +10,7 @@ import type { OhNetContext } from "@/types"
  * read naturally at handler sites (`OHNET_EVENT.START === "on_start"`).
  *
  * Each event fires at a fixed point in the pipeline with a known `context`
- * shape — see the per-event remarks below. Handlers run in registration
+ * shape - see the per-event remarks below. Handlers run in registration
  * order; exceptions are swallowed by the emitter and do not affect the
  * pipeline outcome.
  *
@@ -39,7 +39,7 @@ export const OHNET_EVENT = {
   REQUEST: "on_request",
   /**
    * The adapter (or a middleware) has produced a `context.response`.
-   * Fires regardless of `response.status` — successful and HTTP-error
+   * Fires regardless of `response.status` - successful and HTTP-error
    * responses both pass through here.
    */
   RESPONSE: "on_response",
@@ -90,7 +90,7 @@ export type OhNetEventHandler = (adapter: OhNetAdapter, context: OhNetContext) =
  * @remarks
  * Both methods only set a flag on the dispatcher; the flag is consulted
  * after the hook returns. Calling either method is idempotent within a
- * single request — the first call wins.
+ * single request - the first call wins.
  */
 export interface OhNetMiddlewareEnterControls {
   /**

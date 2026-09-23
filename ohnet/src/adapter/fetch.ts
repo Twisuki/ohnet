@@ -45,6 +45,14 @@ async function parseData(response: Response, responseType: OhNetResponseType): P
   }
 }
 
+/**
+ * Default transport built on the global `fetch`.
+ *
+ * @remarks
+ * Throws `OHNET_NO_FETCH` when unavailable; otherwise bridges the
+ * user `signal`, enforces `request.timeout` via `setTimeout`, and
+ * JSON-encodes plain object / array bodies.
+ */
 export async function fetchAdapter(context: OhNetContext): Promise<OhNetResponse> {
   if (typeof globalThis.fetch !== "function") {
     throw new OhNetInternalError(OHNET_ERROR_CODE.NO_FETCH, OHNET_ERROR_MESSAGE.NO_FETCH)

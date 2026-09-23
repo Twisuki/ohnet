@@ -57,7 +57,7 @@ export class OhNetMiddlewareBuilder {
    * @remarks
    * Replacement preserves the original registration index so surrounding
    * middlewares keep their order. Throws `OHNET_MIDDLEWARE_NAME` when the
-   * middleware has no non-whitespace name — pipeline execution requires a
+   * middleware has no non-whitespace name - pipeline execution requires a
    * stable identifier for `clean` and ordering.
    */
   with(middleware: OhNetMiddleware): OhNetMiddlewareBuilder {

@@ -10,6 +10,13 @@ import { OhNetUnknownError } from "@/config/error"
 import { OhNetError } from "@/model/error"
 import { OHNET_EVENT } from "@/pipeline/types"
 
+/**
+ * Invokes `func` and routes any thrown error to `context.error`.
+ *
+ * @remarks
+ * `OhNetError` instances are preserved; anything else is wrapped in
+ * {@link OhNetUnknownError} with the original value on `error.error`.
+ */
 export async function run(context: OhNetContext, func: () => Promise<unknown>): Promise<void> {
   try {
     await func()
@@ -21,6 +28,15 @@ export async function run(context: OhNetContext, func: () => Promise<unknown>): 
   }
 }
 
+/**
+ * Runs the middleware pipeline around `adapter` and emits lifecycle
+ * events on `events` (when provided).
+ *
+ * @remarks
+ * See {@link OHNET_EVENT} for the event order; this function layers
+ * the `skip` / `terminate` control flow on top of it. Returns
+ * `true` when the pipeline ran normally, `false` when short-circuited.
+ */
 export async function compose(
   adapter: OhNetAdapter,
   context: OhNetContext,

@@ -16,13 +16,13 @@ export type OhNetMethod = "GET" | "POST" | "PUT" | "DELETE" | "PATCH" | "HEAD" |
  * Strategy the adapter uses to deserialize the response body.
  *
  * @remarks
- * - `"auto"` — pick `"json"` when `content-type` is `application/json`, otherwise `"text"`.
- * - `"json"` — `Response.json()`. Returns `null` on parse failure instead of throwing.
- * - `"text"` — `Response.text()`.
- * - `"arraybuffer"` — `Response.arrayBuffer()`.
- * - `"blob"` — `Response.blob()`.
- * - `"stream"` — `Response.body` (a `ReadableStream`).
- * - `"raw"` — the underlying `Response` object itself.
+ * - `"auto"` - pick `"json"` when `content-type` is `application/json`, otherwise `"text"`.
+ * - `"json"` - `Response.json()`. Returns `null` on parse failure instead of throwing.
+ * - `"text"` - `Response.text()`.
+ * - `"arraybuffer"` - `Response.arrayBuffer()`.
+ * - `"blob"` - `Response.blob()`.
+ * - `"stream"` - `Response.body` (a `ReadableStream`).
+ * - `"raw"` - the underlying `Response` object itself.
  */
 export type OhNetResponseType = "auto" | "json" | "text" | "arraybuffer" | "blob" | "stream" | "raw"
 
@@ -44,10 +44,10 @@ export type OhNetResponseKind = "basic" | "cors" | "default" | "error" | "opaque
  *
  * @remarks
  * Three forms are accepted:
- * - `string` — used verbatim, with a leading `?` stripped if present.
- * - `Record<string, unknown>` — entries are URL-encoded; arrays expand into
+ * - `string` - used verbatim, with a leading `?` stripped if present.
+ * - `Record<string, unknown>` - entries are URL-encoded; arrays expand into
  *   repeated keys (`?tag=a&tag=b`); `null` and `undefined` values are skipped.
- * - `Iterable<[name, value]>` — raw pair iteration for callers that need to
+ * - `Iterable<[name, value]>` - raw pair iteration for callers that need to
  *   preserve order or emit duplicate keys without going through an object.
  *
  * @example

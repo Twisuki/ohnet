@@ -16,7 +16,7 @@ import { compose } from "@/pipeline/dispatcher"
  * @remarks
  * Every configuration method (`fork`, `with`, `clean`, `on`, `off`, `append`,
  * HTTP verb helpers) returns a new `OhNetBuilder` instead of mutating the
- * receiver. The original is therefore safe to share across requests — a
+ * receiver. The original is therefore safe to share across requests - a
  * pattern suited to constructing one client per base URL and deriving
  * per-request children from it.
  *
@@ -91,7 +91,7 @@ export class OhNetBuilder {
    *
    * @remarks
    * The middleware's `name` is the identity used by `clean` and by replacement
-   * — registering two middlewares with the same name keeps the original slot
+   * - registering two middlewares with the same name keeps the original slot
    * and swaps the implementation.
    */
   with(middleware: OhNetMiddleware): OhNetBuilder {
@@ -117,7 +117,7 @@ export class OhNetBuilder {
    *
    * @remarks
    * Useful for `builder.middleware.has` / `get` introspection. Mutations on
-   * the returned registry are not propagated — only `with` / `clean` update
+   * the returned registry are not propagated - only `with` / `clean` update
    * the builder's middleware list.
    */
   get middleware(): OhNetMiddlewareBuilder {
@@ -169,7 +169,7 @@ export class OhNetBuilder {
    *
    * @remarks
    * No separator is inserted; callers must include the leading `/` when
-   * joining paths. The base URL is taken as-is — query strings are preserved.
+   * joining paths. The base URL is taken as-is - query strings are preserved.
    */
   append(path: string): OhNetBuilder {
     return this.fork({ url: this.#context.request.url + path })
@@ -253,10 +253,10 @@ export class OhNetBuilder {
    *
    * @remarks
    * Resolution order for the outcome:
-   * 1. `context.error` if set — rethrown as-is.
-   * 2. `context.response` if set — `response.data` is returned.
-   * 3. Pipeline was skipped — `OHNET_SKIPPED` is thrown.
-   * 4. Otherwise — `OHNET_NO_RESPONSE` is thrown.
+   * 1. `context.error` if set - rethrown as-is.
+   * 2. `context.response` if set - `response.data` is returned.
+   * 3. Pipeline was skipped - `OHNET_SKIPPED` is thrown.
+   * 4. Otherwise - `OHNET_NO_RESPONSE` is thrown.
    */
   private async run<T>(): Promise<T> {
     const { params } = this.#context.request
