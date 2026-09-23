@@ -11,12 +11,12 @@ import { compose } from "@/middleware/dispatcher"
 export class OhNetBuilder {
   #adapter: OhNetAdapter | null
   #context: OhNetContext
-  middleware: OhNetMiddlewareBuilder
+  #middleware: OhNetMiddlewareBuilder
 
   constructor(config: OhNetConfig) {
     this.#adapter = config.adapter ?? null
     this.#context = createDefaultContext()
-    this.middleware = new OhNetMiddlewareBuilder()
+    this.#middleware = new OhNetMiddlewareBuilder()
     this.applyConfig(config)
   }
 
@@ -25,7 +25,7 @@ export class OhNetBuilder {
     child.#adapter = this.#adapter
     child.#context = copyContext(this.#context)
     child.#context.meta = {}
-    child.middleware = this.middleware.fork(this.middleware.list())
+    child.#middleware = this.#middleware.fork(this.#middleware.list())
     child.applyConfig(config)
     return child
   }
@@ -36,14 +36,18 @@ export class OhNetBuilder {
 
   with(middleware: OhNetMiddleware): OhNetBuilder {
     const child = this.fork()
-    child.middleware = this.middleware.with(middleware)
+    child.#middleware = this.#middleware.with(middleware)
     return child
   }
 
   clean(name: string): OhNetBuilder {
     const child = this.fork()
-    child.middleware = this.middleware.clean(name)
+    child.#middleware = this.#middleware.clean(name)
     return child
+  }
+
+  get middleware(): OhNetMiddlewareBuilder {
+    return this.#middleware
   }
 
   append(path: string): OhNetBuilder {
@@ -96,7 +100,7 @@ export class OhNetBuilder {
       this.#context.request.url = appendQuery(this.#context.request.url, buildQueryString(params))
     }
 
-    const normal = await compose(this.#adapter, this.#context, this.middleware.list())
+    const normal = await compose(this.#adapter, this.#context, this.#middleware.list())
     if (this.#context.error) {
       throw this.#context.error
     }
