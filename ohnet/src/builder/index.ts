@@ -1,22 +1,25 @@
 import type { OhNetAdapter } from "@/adapter/types"
 import type { OhNetConfig } from "@/context/types"
-import type { OhNetMiddleware } from "@/middleware/types"
+import type { OhNetEventHandler, OhNetEventName, OhNetMiddleware } from "@/pipeline/types"
 import type { OhNetContext, OhNetParams } from "@/types"
+import { OhNetEventBuilder } from "@/builder/event"
 import { OhNetMiddlewareBuilder } from "@/builder/middleware"
 import { OHNET_ERROR_CODE, OHNET_ERROR_MESSAGE, OhNetInternalError } from "@/config/error"
 import { resolveRequest } from "@/context/request"
 import { appendQuery, buildQueryString, copyContext, createDefaultContext } from "@/context/utils"
-import { compose } from "@/middleware/dispatcher"
+import { compose } from "@/pipeline/dispatcher"
 
 export class OhNetBuilder {
   #adapter: OhNetAdapter | null
   #context: OhNetContext
   #middleware: OhNetMiddlewareBuilder
+  #event: OhNetEventBuilder
 
   constructor(config: OhNetConfig) {
     this.#adapter = config.adapter ?? null
     this.#context = createDefaultContext()
     this.#middleware = new OhNetMiddlewareBuilder()
+    this.#event = new OhNetEventBuilder()
     this.applyConfig(config)
   }
 
@@ -26,6 +29,7 @@ export class OhNetBuilder {
     child.#context = copyContext(this.#context)
     child.#context.meta = {}
     child.#middleware = this.#middleware.fork(this.#middleware.list())
+    child.#event = this.#event.fork()
     child.applyConfig(config)
     return child
   }
@@ -48,6 +52,22 @@ export class OhNetBuilder {
 
   get middleware(): OhNetMiddlewareBuilder {
     return this.#middleware
+  }
+
+  on(event: OhNetEventName, callback: OhNetEventHandler): OhNetBuilder {
+    const child = this.fork()
+    child.#event = this.#event.on(event, callback)
+    return child
+  }
+
+  off(event: OhNetEventName, target: OhNetEventHandler): OhNetBuilder {
+    const child = this.fork()
+    child.#event = this.#event.off(event, target)
+    return child
+  }
+
+  get event(): OhNetEventBuilder {
+    return this.#event
   }
 
   append(path: string): OhNetBuilder {
@@ -100,7 +120,7 @@ export class OhNetBuilder {
       this.#context.request.url = appendQuery(this.#context.request.url, buildQueryString(params))
     }
 
-    const normal = await compose(this.#adapter, this.#context, this.#middleware.list())
+    const normal = await compose(this.#adapter, this.#context, this.#middleware.list(), this.#event)
     if (this.#context.error) {
       throw this.#context.error
     }

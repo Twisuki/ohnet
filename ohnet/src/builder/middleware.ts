@@ -1,4 +1,4 @@
-import type { OhNetMiddleware } from "@/middleware/types"
+import type { OhNetMiddleware } from "@/pipeline/types"
 import { OHNET_ERROR_CODE, OHNET_ERROR_MESSAGE, OhNetInternalError } from "@/config/error"
 
 export class OhNetMiddlewareBuilder {
