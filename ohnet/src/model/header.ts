@@ -43,7 +43,7 @@ function normalizeValue(value: string): string {
  * RFC 7230 token validation.
  *
  * @remarks
- * Behaves like the browser `Headers` class but lives in the othnet
+ * Behaves like the browser `Headers` class but lives in the ohnet
  * namespace and supports a wider set of input shapes through the
  * constructor and `concat()`. Names are trimmed, normalized to
  * lowercase, and validated against the RFC 7230 token grammar;

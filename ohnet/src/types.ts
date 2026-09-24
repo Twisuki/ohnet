@@ -3,7 +3,7 @@ import type { OhNetHeader } from "@/model/header"
 import type { OhNetSignal } from "@/model/signal"
 
 /**
- * HTTP request methods supported by othnet.
+ * HTTP request methods supported by ohnet.
  *
  * @remarks
  * The set matches the methods a typical fetch-based client can issue. Custom
@@ -32,7 +32,7 @@ export type OhNetResponseType = "auto" | "json" | "text" | "arraybuffer" | "blob
  * @remarks
  * Most adapters always produce `"default"` (same-origin) or `"cors"` (cross-origin
  * with CORS headers). Values such as `"opaque"` and `"opaqueredirect"` only appear
- * for no-cors requests whose response body is intentionally unreadable; othnet
+ * for no-cors requests whose response body is intentionally unreadable; ohnet
  * surfaces them verbatim but cannot inspect the body in those cases.
  *
  * @see https://fetch.spec.whatwg.org/#responses
@@ -92,7 +92,7 @@ export interface OhNetRequest {
 }
 
 /**
- * A response produced by an adapter, normalized to othnet's shape.
+ * A response produced by an adapter, normalized to ohnet's shape.
  *
  * @typeParam T - Type of the decoded `data` payload. Defaults to `unknown`.
  *

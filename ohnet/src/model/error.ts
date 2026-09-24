@@ -23,7 +23,7 @@ export class OhNetError extends Error {
    * `Error.message`.
    */
   message: string
-  /** Optional structured payload attached to the error. othnet never inspects it. */
+  /** Optional structured payload attached to the error. ohnet never inspects it. */
   data?: unknown
   /** Optional underlying cause preserved on the instance for logging. */
   error?: unknown

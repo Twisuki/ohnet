@@ -22,7 +22,7 @@ import { compose } from "@/pipeline/dispatcher"
  *
  * When `config.adapter` is omitted, the built-in `fetchAdapter` is used. The
  * adapter is stored as a reference and never invoked at construction time, so
- * importing othnet in environments without `globalThis.fetch` is safe; the
+ * importing ohnet in environments without `globalThis.fetch` is safe; the
  * adapter itself will throw `OHNET_NO_FETCH` when it actually runs.
  *
  * @example

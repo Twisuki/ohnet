@@ -1,7 +1,7 @@
 import { OhNetError } from "@/model/error"
 
 /**
- * `type` value assigned to every error produced by othnet internals.
+ * `type` value assigned to every error produced by ohnet internals.
  *
  * @remarks
  * Distinct from {@link OHNET_UNKNOWN_ERROR_TYPE}. Errors thrown directly by
@@ -93,7 +93,7 @@ export const OHNET_ERROR_MESSAGE = {
 } as const satisfies Record<string, string>
 
 /**
- * `type` value for errors that did not originate in othnet but were caught
+ * `type` value for errors that did not originate in ohnet but were caught
  * and re-wrapped by the dispatcher.
  *
  * @see {@link OhNetUnknownError}
@@ -113,7 +113,7 @@ export const OHNET_UNKNOWN_ERROR_CODE = "OHNET_UNKNOWN"
 export const OHNET_UNKNOWN_ERROR_MESSAGE = "ohnet: unknown error"
 
 /**
- * Base class for errors produced by othnet itself.
+ * Base class for errors produced by ohnet itself.
  *
  * @remarks
  * `type` is fixed to {@link OHNET_ERROR_TYPE}; the specific failure mode is
@@ -141,7 +141,7 @@ export class OhNetInternalError extends OhNetError {
  * inspected, logged, or pattern-matched downstream. `type` is fixed to
  * {@link OHNET_UNKNOWN_ERROR_TYPE} and `code` to
  * {@link OHNET_UNKNOWN_ERROR_CODE}; branching on these distinguishes
- * "this came from outside othnet" from any {@link OhNetInternalError}.
+ * "this came from outside ohnet" from any {@link OhNetInternalError}.
  *
  * @example
  * ```ts
