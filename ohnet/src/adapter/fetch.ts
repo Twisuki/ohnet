@@ -1,8 +1,17 @@
-import type { OhNetContext, OhNetResponse, OhNetResponseType } from "@/types"
+import type { OhNetContext, OhNetMethod, OhNetResponse, OhNetResponseType } from "@/types"
 import { OHNET_ERROR_CODE, OHNET_ERROR_MESSAGE, OhNetInternalError } from "@/config/error"
 import { createResponse } from "@/context/response"
 import { OhNetHeader } from "@/model/header"
 import { subscribeAbort } from "@/model/signal"
+
+const FETCH_ADAPTER_AUTO_RETRIES_DEFAULT = 3
+const FETCH_ADAPTER_RETRY_DELAY_MS = 300
+
+const IDEMPOTENT_METHODS: readonly OhNetMethod[] = ["GET", "HEAD", "OPTIONS", "PUT", "DELETE"]
+
+function sleep(ms: number): Promise<void> {
+  return new Promise(resolve => setTimeout(resolve, ms))
+}
 
 function isJsonData(data: unknown): boolean {
   if (typeof data !== "object" || data === null)
@@ -45,15 +54,7 @@ async function parseData(response: Response, responseType: OhNetResponseType): P
   }
 }
 
-/**
- * Default transport built on the global `fetch`.
- *
- * @remarks
- * Throws `OHNET_NO_FETCH` when unavailable; otherwise bridges the
- * user `signal`, enforces `request.timeout` via `setTimeout`, and
- * JSON-encodes plain object / array bodies.
- */
-export async function fetchAdapter(context: OhNetContext): Promise<OhNetResponse> {
+async function request(context: OhNetContext): Promise<OhNetResponse> {
   if (typeof globalThis.fetch !== "function") {
     throw new OhNetInternalError(OHNET_ERROR_CODE.NO_FETCH, OHNET_ERROR_MESSAGE.NO_FETCH)
   }
@@ -111,4 +112,50 @@ export async function fetchAdapter(context: OhNetContext): Promise<OhNetResponse
     type: response.type,
     data: parsedData,
   })
+}
+
+/**
+ * Default transport built on the global `fetch`.
+ *
+ * @remarks
+ * Throws `OHNET_NO_FETCH` when `globalThis.fetch` is unavailable.
+ * Bridges the user `signal`, enforces `request.timeout`, JSON-encodes
+ * plain object / array bodies, and honors `request.autoRetries`.
+ */
+export async function fetchAdapter(context: OhNetContext): Promise<OhNetResponse> {
+  const { method, autoRetries } = context.request
+
+  let retries: number
+  if (autoRetries === true) {
+    retries = IDEMPOTENT_METHODS.includes(method) ? FETCH_ADAPTER_AUTO_RETRIES_DEFAULT : 0
+  }
+  else if (typeof autoRetries === "number" && autoRetries > 0) {
+    retries = Math.min(autoRetries, FETCH_ADAPTER_AUTO_RETRIES_DEFAULT)
+  }
+  else {
+    retries = 0
+  }
+
+  if (retries === 0) {
+    return request(context)
+  }
+
+  let lastError: unknown
+  for (let attempt = 0; attempt <= retries; attempt++) {
+    try {
+      return await request(context)
+    }
+    catch (error) {
+      lastError = error
+      if (attempt >= retries)
+        break
+      if (!(error instanceof OhNetInternalError))
+        break
+      if (error.code !== OHNET_ERROR_CODE.NETWORK && error.code !== OHNET_ERROR_CODE.TIMEOUT)
+        break
+      await sleep(FETCH_ADAPTER_RETRY_DELAY_MS)
+    }
+  }
+
+  throw lastError
 }

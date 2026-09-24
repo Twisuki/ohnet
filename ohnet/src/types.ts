@@ -87,6 +87,8 @@ export interface OhNetRequest {
   timeout?: number
   /** Maximum middleware-driven retries per request. Defaults to `1`. */
   middlewareRetries?: number
+  /** Adapter-level auto-retry signal; passed to the adapter verbatim, semantics adapter-defined. */
+  autoRetries?: boolean | number
   /** Body decoding strategy. See {@link OhNetResponseType}. */
   responseType: OhNetResponseType
 }

@@ -24,6 +24,8 @@ export function resolveRequest(base: OhNetRequest, config: OhNetRequestConfig): 
     request.timeout = config.timeout
   if (config.middlewareRetries !== undefined)
     request.middlewareRetries = config.middlewareRetries
+  if (config.autoRetries !== undefined)
+    request.autoRetries = config.autoRetries
   if (config.responseType !== undefined)
     request.responseType = config.responseType
   if (config.data !== undefined)
