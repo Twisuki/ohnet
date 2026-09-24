@@ -1,5 +1,5 @@
 import type { OhNetContext, OhNetMethod, OhNetResponse, OhNetResponseType } from "@/types"
-import { OHNET_ERROR_CODE, OHNET_ERROR_MESSAGE, OhNetInternalError } from "@/config/error"
+import { OHNET_ADAPTER_ERROR_CODE, OHNET_ADAPTER_ERROR_MESSAGE, OhNetAdapterError } from "@/config/error"
 import { createResponse } from "@/context/response"
 import { OhNetHeader } from "@/model/header"
 import { subscribeAbort } from "@/model/signal"
@@ -56,7 +56,7 @@ async function parseData(response: Response, responseType: OhNetResponseType): P
 
 async function request(context: OhNetContext): Promise<OhNetResponse> {
   if (typeof globalThis.fetch !== "function") {
-    throw new OhNetInternalError(OHNET_ERROR_CODE.NO_FETCH, OHNET_ERROR_MESSAGE.NO_FETCH)
+    throw new OhNetAdapterError(OHNET_ADAPTER_ERROR_CODE.NO_FETCH, OHNET_ADAPTER_ERROR_MESSAGE.NO_FETCH)
   }
 
   const { url, method, headers, data, signal, timeout, responseType } = context.request
@@ -87,12 +87,12 @@ async function request(context: OhNetContext): Promise<OhNetResponse> {
   }
   catch (error) {
     if (timedOut) {
-      throw new OhNetInternalError(OHNET_ERROR_CODE.TIMEOUT, OHNET_ERROR_MESSAGE.TIMEOUT, undefined, error)
+      throw new OhNetAdapterError(OHNET_ADAPTER_ERROR_CODE.TIMEOUT, OHNET_ADAPTER_ERROR_MESSAGE.TIMEOUT, undefined, error)
     }
     if (signal?.aborted) {
-      throw new OhNetInternalError(OHNET_ERROR_CODE.ABORT, OHNET_ERROR_MESSAGE.ABORT, signal.reason, error)
+      throw new OhNetAdapterError(OHNET_ADAPTER_ERROR_CODE.ABORT, OHNET_ADAPTER_ERROR_MESSAGE.ABORT, signal.reason, error)
     }
-    throw new OhNetInternalError(OHNET_ERROR_CODE.NETWORK, OHNET_ERROR_MESSAGE.NETWORK, undefined, error)
+    throw new OhNetAdapterError(OHNET_ADAPTER_ERROR_CODE.NETWORK, OHNET_ADAPTER_ERROR_MESSAGE.NETWORK, undefined, error)
   }
   finally {
     if (timer !== undefined) {
@@ -149,9 +149,9 @@ export async function fetchAdapter(context: OhNetContext): Promise<OhNetResponse
       lastError = error
       if (attempt >= retries)
         break
-      if (!(error instanceof OhNetInternalError))
+      if (!(error instanceof OhNetAdapterError))
         break
-      if (error.code !== OHNET_ERROR_CODE.NETWORK && error.code !== OHNET_ERROR_CODE.TIMEOUT)
+      if (error.code !== OHNET_ADAPTER_ERROR_CODE.NETWORK && error.code !== OHNET_ADAPTER_ERROR_CODE.TIMEOUT)
         break
       await sleep(FETCH_ADAPTER_RETRY_DELAY_MS)
     }

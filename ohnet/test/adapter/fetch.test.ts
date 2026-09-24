@@ -1,5 +1,5 @@
 import type { OhNetContext, OhNetSignal } from "@twisuki/ohnet"
-import { OHNET_ERROR_CODE, OhNetController, OhNetHeader } from "@twisuki/ohnet"
+import { OHNET_ADAPTER_ERROR_CODE, OhNetController, OhNetHeader } from "@twisuki/ohnet"
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest"
 import { fetchAdapter } from "@/adapter/fetch"
 
@@ -54,7 +54,7 @@ describe("fetchAdapter - fetch availability", () => {
   it("throws OHNET_NO_FETCH when globalThis.fetch is not a function", async () => {
     delete (globalThis as { fetch?: typeof fetch }).fetch
     await expect(fetchAdapter(createContext())).rejects.toMatchObject({
-      code: OHNET_ERROR_CODE.NO_FETCH,
+      code: OHNET_ADAPTER_ERROR_CODE.NO_FETCH,
       name: "Error",
     })
   })
@@ -211,7 +211,7 @@ describe("fetchAdapter - request execution", () => {
 
     const promise = fetchAdapter(createContext({ timeout: 100 })).catch(e => e)
     await vi.advanceTimersByTimeAsync(100)
-    await expect(promise).resolves.toMatchObject({ code: OHNET_ERROR_CODE.TIMEOUT })
+    await expect(promise).resolves.toMatchObject({ code: OHNET_ADAPTER_ERROR_CODE.TIMEOUT })
     vi.useRealTimers()
   })
 
@@ -225,7 +225,7 @@ describe("fetchAdapter - request execution", () => {
 
     await expect(fetchAdapter(createContext({ signal: controller.signal })))
       .rejects
-      .toMatchObject({ code: OHNET_ERROR_CODE.ABORT })
+      .toMatchObject({ code: OHNET_ADAPTER_ERROR_CODE.ABORT })
   })
 
   it("throws OHNET_NETWORK when fetch rejects for other reasons", async () => {
@@ -233,7 +233,7 @@ describe("fetchAdapter - request execution", () => {
 
     await expect(fetchAdapter(createContext()))
       .rejects
-      .toMatchObject({ code: OHNET_ERROR_CODE.NETWORK })
+      .toMatchObject({ code: OHNET_ADAPTER_ERROR_CODE.NETWORK })
   })
 
   it("builds the OhNetResponse with status, statusText, headers, and ok from the fetch Response", async () => {
@@ -262,7 +262,7 @@ describe("fetchAdapter - request execution", () => {
 
     await expect(fetchAdapter(createContext({ signal: controller.signal })))
       .rejects
-      .toMatchObject({ code: OHNET_ERROR_CODE.ABORT })
+      .toMatchObject({ code: OHNET_ADAPTER_ERROR_CODE.ABORT })
   })
 
   it("clears the timeout after fetch resolves", async () => {
