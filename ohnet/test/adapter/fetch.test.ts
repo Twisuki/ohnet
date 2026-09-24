@@ -11,6 +11,7 @@ function createContext(overrides: Partial<{
   data: unknown
   signal: OhNetSignal
   timeout: number
+  autoRetries: boolean | number
   responseType: "auto" | "json" | "text" | "arraybuffer" | "blob" | "stream" | "raw"
 }> = {}): OhNetContext {
   return {
@@ -22,6 +23,7 @@ function createContext(overrides: Partial<{
       data: overrides.data,
       signal: overrides.signal,
       timeout: overrides.timeout,
+      autoRetries: overrides.autoRetries,
       responseType: overrides.responseType ?? "auto",
     },
     response: null,
@@ -60,7 +62,7 @@ describe("fetchAdapter - fetch availability", () => {
   })
 })
 
-describe("fetchAdapter - request execution", () => {
+describe("fetchAdapter - request call", () => {
   let fetchMock: ReturnType<typeof vi.fn>
 
   beforeEach(() => {
@@ -83,6 +85,19 @@ describe("fetchAdapter - request execution", () => {
     expect(calledUrl).toBe("https://api.example.com/v1")
     expect(calledInit.method).toBe("GET")
     expect(calledInit.headers).toMatchObject({ "x-trace": "abc" })
+  })
+})
+
+describe("fetchAdapter - body serialization", () => {
+  let fetchMock: ReturnType<typeof vi.fn>
+
+  beforeEach(() => {
+    fetchMock = vi.fn()
+    globalThis.fetch = fetchMock as unknown as typeof fetch
+  })
+
+  afterEach(() => {
+    vi.restoreAllMocks()
   })
 
   it("serializes plain objects as JSON and sets content-type when missing", async () => {
@@ -130,6 +145,19 @@ describe("fetchAdapter - request execution", () => {
 
     const [, calledInit] = fetchMock.mock.calls[0]
     expect(calledInit.headers["content-type"]).toBe("text/plain")
+  })
+})
+
+describe("fetchAdapter - response parsing", () => {
+  let fetchMock: ReturnType<typeof vi.fn>
+
+  beforeEach(() => {
+    fetchMock = vi.fn()
+    globalThis.fetch = fetchMock as unknown as typeof fetch
+  })
+
+  afterEach(() => {
+    vi.restoreAllMocks()
   })
 
   it("parses response as JSON when responseType is 'json'", async () => {
@@ -201,6 +229,47 @@ describe("fetchAdapter - request execution", () => {
 
     expect(response.data).toBe("<html/>")
   })
+})
+
+describe("fetchAdapter - response mapping", () => {
+  let fetchMock: ReturnType<typeof vi.fn>
+
+  beforeEach(() => {
+    fetchMock = vi.fn()
+    globalThis.fetch = fetchMock as unknown as typeof fetch
+  })
+
+  afterEach(() => {
+    vi.restoreAllMocks()
+  })
+
+  it("builds the OhNetResponse with status, statusText, headers, and ok from the fetch Response", async () => {
+    fetchMock.mockResolvedValueOnce(new Response("hi", {
+      status: 201,
+      statusText: "Created",
+      headers: { "x-tag": "yes", "content-type": "text/plain" },
+    }))
+
+    const response = await fetchAdapter(createContext({ url: "https://example.com/r" }))
+
+    expect(response.status).toBe(201)
+    expect(response.statusText).toBe("Created")
+    expect(response.headers.get("x-tag")).toBe("yes")
+    expect(response.ok).toBe(true)
+  })
+})
+
+describe("fetchAdapter - signal and timeout", () => {
+  let fetchMock: ReturnType<typeof vi.fn>
+
+  beforeEach(() => {
+    fetchMock = vi.fn()
+    globalThis.fetch = fetchMock as unknown as typeof fetch
+  })
+
+  afterEach(() => {
+    vi.restoreAllMocks()
+  })
 
   it("throws OHNET_TIMEOUT when the timeout fires before fetch rejects", async () => {
     vi.useFakeTimers()
@@ -228,29 +297,6 @@ describe("fetchAdapter - request execution", () => {
       .toMatchObject({ code: OHNET_ADAPTER_ERROR_CODE.ABORT })
   })
 
-  it("throws OHNET_NETWORK when fetch rejects for other reasons", async () => {
-    fetchMock.mockRejectedValueOnce(new TypeError("network down"))
-
-    await expect(fetchAdapter(createContext()))
-      .rejects
-      .toMatchObject({ code: OHNET_ADAPTER_ERROR_CODE.NETWORK })
-  })
-
-  it("builds the OhNetResponse with status, statusText, headers, and ok from the fetch Response", async () => {
-    fetchMock.mockResolvedValueOnce(new Response("hi", {
-      status: 201,
-      statusText: "Created",
-      headers: { "x-tag": "yes", "content-type": "text/plain" },
-    }))
-
-    const response = await fetchAdapter(createContext({ url: "https://example.com/r" }))
-
-    expect(response.status).toBe(201)
-    expect(response.statusText).toBe("Created")
-    expect(response.headers.get("x-tag")).toBe("yes")
-    expect(response.ok).toBe(true)
-  })
-
   it("forwards the user signal abort into the internal AbortController", async () => {
     const controller = new OhNetController()
     const abortError = Object.assign(new Error("aborted"), { name: "AbortError" })
@@ -274,5 +320,159 @@ describe("fetchAdapter - request execution", () => {
 
     expect(clearSpy).toHaveBeenCalled()
     vi.useRealTimers()
+  })
+})
+
+describe("fetchAdapter - error translation", () => {
+  let fetchMock: ReturnType<typeof vi.fn>
+
+  beforeEach(() => {
+    fetchMock = vi.fn()
+    globalThis.fetch = fetchMock as unknown as typeof fetch
+  })
+
+  afterEach(() => {
+    vi.restoreAllMocks()
+  })
+
+  it("throws OHNET_NETWORK when fetch rejects for other reasons", async () => {
+    fetchMock.mockRejectedValueOnce(new TypeError("network down"))
+
+    await expect(fetchAdapter(createContext()))
+      .rejects
+      .toMatchObject({ code: OHNET_ADAPTER_ERROR_CODE.NETWORK })
+  })
+})
+
+describe("fetchAdapter - retry", () => {
+  let fetchMock: ReturnType<typeof vi.fn>
+
+  beforeEach(() => {
+    fetchMock = vi.fn()
+    globalThis.fetch = fetchMock as unknown as typeof fetch
+  })
+
+  afterEach(() => {
+    vi.restoreAllMocks()
+  })
+
+  it("normalizes autoRetries into the expected attempt count", async () => {
+    // autoRetries omitted: adapter makes a single attempt
+    fetchMock.mockResolvedValueOnce(jsonResponse({ ok: true }))
+    await fetchAdapter(createContext({ method: "GET" }))
+    expect(fetchMock).toHaveBeenCalledTimes(1)
+
+    // autoRetries false: adapter makes a single attempt
+    fetchMock.mockReset()
+    fetchMock.mockResolvedValueOnce(jsonResponse({ ok: true }))
+    await fetchAdapter(createContext({ method: "GET", autoRetries: false }))
+    expect(fetchMock).toHaveBeenCalledTimes(1)
+
+    // autoRetries 0: adapter makes a single attempt
+    fetchMock.mockReset()
+    fetchMock.mockResolvedValueOnce(jsonResponse({ ok: true }))
+    await fetchAdapter(createContext({ method: "GET", autoRetries: 0 }))
+    expect(fetchMock).toHaveBeenCalledTimes(1)
+
+    // autoRetries -1: adapter makes a single attempt (negative is treated as off)
+    fetchMock.mockReset()
+    fetchMock.mockResolvedValueOnce(jsonResponse({ ok: true }))
+    await fetchAdapter(createContext({ method: "GET", autoRetries: -1 }))
+    expect(fetchMock).toHaveBeenCalledTimes(1)
+
+    // autoRetries true on GET: adapter retries up to 3 times on NETWORK failures
+    fetchMock.mockReset()
+    for (let i = 0; i < 3; i++) fetchMock.mockRejectedValueOnce(new TypeError("network down"))
+    fetchMock.mockResolvedValueOnce(jsonResponse({ ok: true }))
+    await fetchAdapter(createContext({ method: "GET", autoRetries: true }))
+    expect(fetchMock).toHaveBeenCalledTimes(4)
+
+    // autoRetries true on POST: adapter skips retry (non-idempotent)
+    fetchMock.mockReset()
+    fetchMock.mockResolvedValueOnce(jsonResponse({ ok: true }))
+    await fetchAdapter(createContext({ method: "POST", autoRetries: true }))
+    expect(fetchMock).toHaveBeenCalledTimes(1)
+
+    // autoRetries true on PATCH: adapter skips retry (non-idempotent)
+    fetchMock.mockReset()
+    fetchMock.mockResolvedValueOnce(jsonResponse({ ok: true }))
+    await fetchAdapter(createContext({ method: "PATCH", autoRetries: true }))
+    expect(fetchMock).toHaveBeenCalledTimes(1)
+
+    // autoRetries 1 on GET: adapter retries once on NETWORK failure
+    fetchMock.mockReset()
+    fetchMock.mockRejectedValueOnce(new TypeError("network down"))
+    fetchMock.mockResolvedValueOnce(jsonResponse({ ok: true }))
+    await fetchAdapter(createContext({ method: "GET", autoRetries: 1 }))
+    expect(fetchMock).toHaveBeenCalledTimes(2)
+
+    // autoRetries 3 on GET: adapter retries three times (at the default cap)
+    fetchMock.mockReset()
+    for (let i = 0; i < 3; i++) fetchMock.mockRejectedValueOnce(new TypeError("network down"))
+    fetchMock.mockResolvedValueOnce(jsonResponse({ ok: true }))
+    await fetchAdapter(createContext({ method: "GET", autoRetries: 3 }))
+    expect(fetchMock).toHaveBeenCalledTimes(4)
+
+    // autoRetries 5 on GET: adapter clamps to 3 retries
+    fetchMock.mockReset()
+    for (let i = 0; i < 3; i++) fetchMock.mockRejectedValueOnce(new TypeError("network down"))
+    fetchMock.mockResolvedValueOnce(jsonResponse({ ok: true }))
+    await fetchAdapter(createContext({ method: "GET", autoRetries: 5 }))
+    expect(fetchMock).toHaveBeenCalledTimes(4)
+
+    // autoRetries 2 on POST: explicit number overrides the idempotency gate
+    fetchMock.mockReset()
+    for (let i = 0; i < 2; i++) fetchMock.mockRejectedValueOnce(new TypeError("network down"))
+    fetchMock.mockResolvedValueOnce(jsonResponse({ ok: true }))
+    await fetchAdapter(createContext({ method: "POST", autoRetries: 2 }))
+    expect(fetchMock).toHaveBeenCalledTimes(3)
+  })
+
+  it("returns the latest successful response when an earlier attempt fails", async () => {
+    // First attempt fails with NETWORK, second succeeds: adapter returns the success
+    fetchMock.mockRejectedValueOnce(new TypeError("network down"))
+    fetchMock.mockResolvedValueOnce(jsonResponse({ recovered: true }))
+
+    const response = await fetchAdapter(createContext({ method: "GET", autoRetries: 1 }))
+
+    expect(fetchMock).toHaveBeenCalledTimes(2)
+    expect(response.data).toEqual({ recovered: true })
+  })
+
+  it("throws the final error preserving its code when retries are exhausted", async () => {
+    // All four attempts fail with NETWORK: adapter throws OHNET_NETWORK
+    for (let i = 0; i < 4; i++) fetchMock.mockRejectedValueOnce(new TypeError("network down"))
+
+    const error = await fetchAdapter(createContext({ method: "GET", autoRetries: true }))
+      .catch(e => e)
+    expect(fetchMock).toHaveBeenCalledTimes(4)
+    expect(error.code).toBe(OHNET_ADAPTER_ERROR_CODE.NETWORK)
+    expect(error.error).toBeInstanceOf(TypeError)
+
+    // All four attempts time out: adapter throws OHNET_TIMEOUT
+    fetchMock.mockReset()
+    const abortError = Object.assign(new Error("aborted"), { name: "AbortError" })
+    fetchMock.mockImplementation((_url: string, init: RequestInit | undefined) => new Promise((_resolve, reject) => {
+      init?.signal?.addEventListener("abort", () => reject(abortError))
+    }))
+
+    const error2 = await fetchAdapter(createContext({ method: "GET", autoRetries: true, timeout: 50 }))
+      .catch(e => e)
+    expect(error2.code).toBe(OHNET_ADAPTER_ERROR_CODE.TIMEOUT)
+  })
+
+  it("does not retry when the error code is not in the retryable set", async () => {
+    // User signal aborts: adapter throws OHNET_ABORT and does not retry
+    const controller = new AbortController()
+    const abortError = Object.assign(new Error("aborted"), { name: "AbortError" })
+    fetchMock.mockImplementationOnce(async () => {
+      controller.abort()
+      throw abortError
+    })
+
+    const error = await fetchAdapter(createContext({ method: "GET", autoRetries: true, signal: controller.signal }))
+      .catch(e => e)
+    expect(fetchMock).toHaveBeenCalledTimes(1)
+    expect(error.code).toBe(OHNET_ADAPTER_ERROR_CODE.ABORT)
   })
 })
